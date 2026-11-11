@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>워드봉사 검수기</title>
+<style>
+@font-face { font-family: "Pretendard"; font-weight: 400; font-display: swap; src: url("fonts/Pretendard-Regular.subset.woff2") format("woff2"); }
+@font-face { font-family: "Pretendard"; font-weight: 700; font-display: swap; src: url("fonts/Pretendard-Bold.subset.woff2") format("woff2"); }
+/* 한 줄 머리글, 그 아래 원고 한 장. 상자 없이 글자와 밑줄만으로 구분한다. */
+:root {
+  --bg: #ffffff;
+  --ink: #16181a;
+  --muted: #8a9096;
+  --hair: #e6e8ea;
+  --orange: #e8590c;
+  --blue: #1c6fd6;
+  --font: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #121314; --ink: #e8eaec; --muted: #7d848b; --hair: #2a2d30; --orange: #ff8a3d; --blue: #6aa8ff; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #121314; --ink: #e8eaec; --muted: #7d848b; --hair: #2a2d30; --orange: #ff8a3d; --blue: #6aa8ff; color-scheme: dark; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.75; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.page { max-width: 980px; margin: 0 auto; padding: 28px 20px 80px; }
+.top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 36px; }
+.brand { margin: 0; font-size: 24px; line-height: 1; font-weight: 400; }
+svg.rt { display: inline-block; overflow: visible; }
+.row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; }
+.t { background: none; border: 0; padding: 0; cursor: pointer; color: var(--ink); text-underline-offset: 4px; }
+.t:hover { text-decoration: underline; }
+.t.strong { font-weight: 700; }
+.t.dim { color: var(--muted); }
+.t:disabled { color: var(--muted); cursor: default; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+#src { display: block; width: 100%; min-height: 62vh; border: 0; padding: 0; margin: 0 0 24px; background: transparent; resize: vertical; line-height: 1.75; white-space: pre; overflow: auto; tab-size: 4; outline: none; }
+#src::placeholder { color: var(--muted); }
+body.drag #src { color: var(--muted); }
+#summary { margin: 0 0 6px; }
+#summary .o { color: var(--orange); font-weight: 700; }
+#summary .b { color: var(--blue); font-weight: 700; }
+#summary .i { color: var(--muted); font-weight: 700; }
+#summary svg.rt { font-size: 1em; }
+#ractions { margin-bottom: 28px; }
+.sepd { gap: 6px 0; }
+.sepd > .t:not([hidden]) ~ .t:not([hidden])::before { content: "|"; display: inline-block; margin: 0 12px; color: var(--muted); font-weight: 400; opacity: .6; }
+#progress:empty, #global:empty { display: none; }
+#progress { margin: -16px 0 24px; }
+#global { margin: 0 0 28px; display: grid; gap: 4px; }
+#global .gl { color: var(--orange); margin-right: 10px; font-weight: 700; }
+#doc { font-variant-ligatures: none; }
+.ln { display: grid; grid-template-columns: 3.2em 1fr; column-gap: 14px; content-visibility: auto; contain-intrinsic-size: auto 26px; }
+.ln .no { text-align: right; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; user-select: none; padding-top: 3px; }
+.ln .tx { white-space: pre-wrap; word-break: break-all; min-height: 1.75em; }
+.ln.flash .no { color: var(--ink); font-weight: 700; }
+.sp { display: inline-block; min-width: .5em; position: relative; }
+.sp::after { content: "·"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); line-height: 1; color: var(--muted); opacity: .8; pointer-events: none; }
+.tab { color: var(--muted); }
+.m { cursor: pointer; border-bottom: 2px solid var(--orange); padding-bottom: 1px; }
+.m.b { border-bottom-color: var(--blue); }
+.m.i { border-bottom-style: dotted; }
+.m:hover, .m.on { color: var(--orange); }
+.m.b:hover, .m.b.on { color: var(--blue); }
+.m.z { display: inline-block; width: .6em; height: 1.2em; vertical-align: text-bottom; }
+#pop { position: absolute; z-index: 10; width: min(380px, calc(100vw - 32px)); background: var(--bg); border-left: 2px solid var(--orange); padding: 10px 16px 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, .14); }
+#pop.b { border-left-color: var(--blue); }
+#pop .it + .it { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--hair); }
+#pop .lab { font-size: 13px; font-weight: 700; color: var(--orange); }
+#pop .lab.b { color: var(--blue); }
+#pop .msg { margin: 2px 0 4px; }
+#pop .chg { font-size: 13px; color: var(--muted); word-break: break-all; }
+#pop .chg code { font-family: var(--font); color: var(--ink); white-space: pre-wrap; }
+#pop .row { margin-top: 6px; gap: 0; }
+#settings { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--hair); display: grid; gap: 22px; max-width: 640px; }
+#settings h2 { font-size: 15px; margin: 0; font-weight: 700; }
+.f { display: grid; gap: 4px; }
+.f > span:first-child { font-weight: 700; font-size: 14px; }
+.f input[type=text], .f input[type=password], .f select { border: 0; border-bottom: 1px solid var(--hair); background: transparent; padding: 4px 0; outline: none; width: 100%; }
+.f input:focus, .f select:focus { border-bottom-color: var(--ink); }
+.checks { display: grid; gap: 4px; }
+.checks label { display: flex; gap: 10px; align-items: baseline; }
+.empty { color: var(--muted); padding: 40px 0; }
+#toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 6px 14px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+#toast.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <h1 class="brand"><svg class="rt" xmlns="http://www.w3.org/2000/svg" viewBox="-15 -915 13980 1070" style="width:13.980em;height:1.070em;vertical-align:-0.155em" role="img" aria-label="워드봉사 검수기"><path fill="currentColor" stroke="currentColor" stroke-width="30" stroke-linejoin="round" d="M1168 -215C1259 -215 1338 -247 1403 -312C1468 -377 1500 -456 1500 -548C1500 -639 1468 -718 1403 -783C1338 -848 1259 -880 1168 -880H378C286 -880 207 -848 142 -783C77 -718 45 -639 45 -548C45 -456 77 -377 142 -312C207 -247 286 -215 378 -215ZM388 -305C321 -305 263 -329 216 -376C169 -423 145 -481 145 -548C145 -614 169 -672 216 -719C263 -766 321 -790 388 -790H1158C1224 -790 1282 -766 1329 -719C1376 -672 1400 -614 1400 -548C1400 -481 1376 -423 1329 -376C1282 -329 1224 -305 1158 -305ZM45 -50H723V120H823V-50H1500V-140H45ZM1745 120H1845V-880H1745V-425H1575V-335H1745Z M1935 -45H3735V-135H2035V-790H3735V-880H1935ZM1935 120H3735V30H1935Z M3825 -550H5625V-880H5525V-805H3925V-880H3825ZM5495 120C5531 120 5562 107 5587 82C5612 57 5625 26 5625 -10C5625 -46 5612 -77 5587 -102C5562 -127 5531 -140 5495 -140H3955C3919 -140 3888 -127 3863 -102C3838 -77 3825 -46 3825 -10C3825 26 3838 57 3863 82C3888 107 3919 120 3955 120ZM3825 -215H5625V-305H4775V-475H4675V-305H3825ZM3965 30C3954 30 3945 26 3937 18C3929 10 3925 1 3925 -10C3925 -21 3929 -30 3937 -38C3945 -46 3954 -50 3965 -50H5485C5496 -50 5505 -46 5513 -38C5521 -30 5525 -21 5525 -10C5525 1 5521 10 5513 18C5505 26 5496 30 5485 30ZM3925 -640V-715H5525V-640Z M6393 -580 6391 -551 6388 -523 6383 -496 6375 -468 6365 -441 6353 -414 6339 -388 6322 -361 6303 -335 6282 -309 6258 -283 6231 -258 6202 -232 6171 -207 6136 -182 6100 -158 6061 -133 6019 -110 5975 -86 5928 -63 5878 -40 5826 -18 5772 4 5715 26 5750 120 5809 98 5865 75 5919 51 5971 27 6020 3 6067 -22 6112 -48 6154 -74 6194 -100 6231 -128 6266 -155 6299 -184 6329 -213 6357 -243 6382 -274 6405 -305 6425 -337 6443 -369 6460 -337 6480 -305 6503 -274 6528 -243 6556 -213 6586 -184 6619 -155 6654 -128 6691 -100 6731 -74 6773 -48 6818 -22 6865 3 6914 27 6966 51 7020 75 7077 98 7136 120 7170 26 7113 4 7059 -18 7007 -40 6957 -63 6911 -86 6866 -110 6824 -133 6785 -158 6749 -182 6715 -207 6683 -232 6654 -258 6627 -283 6603 -309 6582 -335 6563 -361 6546 -388 6532 -414 6520 -441 6510 -468 6502 -496 6497 -523 6494 -551 6493 -580V-880H6393ZM7245 120H7345V-335H7515V-425H7345V-880H7245Z M8325 120H10125V-260H8325ZM10025 30H8425V-170H10025V30ZM8325 -790H9680V-335H9780V-880H8325ZM10025 -335H10125V-880H10025V-653H9855V-563H10025Z M11065 -681 11064 -667 11061 -654 11056 -640 11048 -626 11037 -611 11024 -596 11006 -580 10986 -563 10962 -547 10935 -530 10905 -513 10871 -497 10834 -480 10794 -464 10750 -448 10704 -432 10654 -416 10600 -401 10544 -386 10485 -371 10422 -356 10356 -341 10287 -327 10215 -313 10233 -215 10307 -229 10377 -244 10444 -258 10508 -273 10569 -289 10627 -305 10683 -321 10735 -337 10784 -354 10830 -371 10873 -388 10914 -406 10951 -425 10985 -444 11017 -463 11046 -483 11072 -504 11095 -526 11115 -548 11135 -526 11158 -504 11184 -483 11213 -463 11245 -444 11279 -425 11317 -406 11357 -388 11400 -371 11446 -354 11495 -337 11548 -321 11603 -305 11661 -289 11722 -273 11786 -258 11853 -244 11923 -229 11997 -215 12015 -313 11943 -327 11874 -341 11808 -356 11745 -371 11686 -386 11630 -401 11576 -416 11527 -432 11480 -448 11436 -464 11396 -480 11359 -497 11325 -513 11295 -530 11268 -547 11244 -563 11224 -580 11207 -596 11193 -611 11182 -626 11174 -640 11169 -654 11166 -667 11165 -681V-880H11065ZM10215 -50H11065V120H11165V-50H12015V-140H10215Z M12105 -790H13630V120H13730V-880H12105ZM13805 120H13905V-880H13805Z"/></svg></h1>
+    <div class="row">
+      <span class="muted small" id="fileinfo"></span>
+      <button class="t dim" id="toggleSettings" aria-expanded="false" aria-controls="settings">설정</button>
+    </div>
+  </header>
+
+  <section id="edit">
+    <label for="src" class="muted small" style="display:none">원고</label>
+    <textarea id="src" spellcheck="false" placeholder="원고를 붙여 넣거나 .hwp 파일을 이 화면에 끌어다 놓으면 됨."></textarea>
+    <div class="row sepd">
+      <button class="t strong" id="run">검사하기</button>
+      <label class="t" for="file">파일 열기</label>
+      <input id="file" type="file" accept=".hwp,.hwpx,.txt,text/plain" hidden>
+      <button class="t dim" id="example">예시 원고</button>
+      <button class="t dim" id="clear">비우기</button>
+    </div>
+  </section>
+
+  <section id="review" hidden>
+    <p id="summary"></p>
+    <div class="row sepd" id="ractions">
+      <button class="t" id="back">고쳐 쓰기</button>
+      <button class="t strong" id="fixAll">규칙 위반 한꺼번에 고치기</button>
+      <button class="t" id="bareunRun" hidden>바른 맞춤법 검사</button>
+      <button class="t" id="claudeRun" hidden>Claude로 맞춤법 보기</button>
+      <button class="t" id="copyOut">원고 복사</button>
+      <button class="t" id="saveTxt">원고 저장</button>
+      <button class="t" id="saveCsv">결과표 저장</button>
+      <button class="t dim" id="undo" disabled>되돌리기</button>
+    </div>
+    <p id="progress" class="muted small"></p>
+    <div id="global" class="small"></div>
+    <div id="doc"></div>
+  </section>
+
+  <section id="settings" hidden aria-label="설정">
+    <h2>검사 설정</h2>
+    <p class="muted small" style="margin:0">처음 값은 2026 워드 봉사 입력 지침을 따름.</p>
+    <label class="f"><span>들여쓰기 칸 수</span><input type="text" id="s-indents"><span class="muted small">문단 2칸, 제목·소제목·목차 4칸. 쉼표로 여러 개, 비우면 검사 안 함.</span></label>
+    <label class="f"><span>연속 빈 줄</span>
+      <select id="s-blank">
+        <option value="3">3줄까지 (보통 1줄, 큰 단원 2줄)</option>
+        <option value="2">2줄까지</option>
+        <option value="1">1줄까지</option>
+        <option value="0">빈 줄 금지</option>
+        <option value="-1">검사 안 함</option>
+      </select></label>
+    <label class="f"><span>쓸 수 있는 기호</span><input type="text" id="s-allowed"><span class="muted small">키보드 기호와 둥근 따옴표. 여기 없는 기호를 표시함.</span></label>
+    <label class="f"><span>쪽 번호 줄</span>
+      <select id="s-page">
+        <option value="off">검사 안 함 (지침은 본문에 쪽 번호를 넣지 않음)</option>
+        <option value="dash">-12-</option>
+        <option value="angle">&lt;12&gt;</option>
+        <option value="bracket">[12]</option>
+        <option value="jjok">12쪽</option>
+        <option value="custom">직접 정하기 (정규식)</option>
+      </select>
+      <input type="text" id="s-pagecustom" placeholder="예: ^#(\d+)$" hidden></label>
+    <div class="f"><span>더 볼 것</span>
+      <div class="checks">
+        <label><input type="checkbox" id="s-midBreak"> 문단 중간 줄바꿈</label>
+        <label><input type="checkbox" id="s-hanja"> 한자</label>
+        <label><input type="checkbox" id="s-math"> 날짜, 연산 기호, 분수</label>
+        <label><input type="checkbox" id="s-structure"> 각주 끝, 표 끝, 차례 쪽수, 판권사항</label>
+        <label><input type="checkbox" id="s-bookInfo"> 서지사항</label>
+        <label><input type="checkbox" id="s-picRef"> '위의 그림' 같은 위치 표현</label>
+        <label><input type="checkbox" id="s-spell"> 자주 틀리는 맞춤법</label>
+        <label><input type="checkbox" id="s-spacing"> 자주 틀리는 띄어쓰기</label>
+        <label><input type="checkbox" id="s-typo"> 오타 의심</label>
+        <label><input type="checkbox" id="s-titleMarker"> 제목 표시 @[ @]</label>
+      </div>
+    </div>
+    <label class="f"><span>내 바른 API 키 (선택)</span><input type="password" id="s-bareunKey" placeholder="koba-로 시작" autocomplete="off"><span class="muted small" id="keyNote">공용 한도가 떨어졌을 때만 넣음. 이 브라우저에만 저장됨.</span></label>
+    <div class="row"><button class="t dim" id="reset">처음 값으로</button></div>
+  </section>
+</div>
+<div id="pop" hidden role="dialog" aria-label="문제 설명"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/*! pako 2.1.0 https://github.com/nodeca/pako @license (MIT AND Zlib) */
+!function(e,t){"object"==typeof exports&&"undefined"!=typeof module?t(exports):"function"==typeof define&&define.amd?define(["exports"],t):t((e="undefined"!=typeof globalThis?globalThis:e||self).pako={})}(this,(function(e){"use strict";var t=(e,t,i,n)=>{let a=65535&e|0,r=e>>>16&65535|0,o=0;for(;0!==i;){o=i>2e3?2e3:i,i-=o;do{a=a+t[n++]|0,r=r+a|0}while(--o);a%=65521,r%=65521}return a|r<<16|0};const i=new Uint32Array((()=>{let e,t=[];for(var i=0;i<256;i++){e=i;for(var n=0;n<8;n++)e=1&e?3988292384^e>>>1:e>>>1;t[i]=e}return t})());var n=(e,t,n,a)=>{const r=i,o=a+n;e^=-1;for(let i=a;i<o;i++)e=e>>>8^r[255&(e^t[i])];return-1^e};const a=16209;var r=function(e,t){let i,n,r,o,s,l,d,f,c,h,u,w,b,m,k,_,g,p,v,x,y,E,R,A;const Z=e.state;i=e.next_in,R=e.input,n=i+(e.avail_in-5),r=e.next_out,A=e.output,o=r-(t-e.avail_out),s=r+(e.avail_out-257),l=Z.dmax,d=Z.wsize,f=Z.whave,c=Z.wnext,h=Z.window,u=Z.hold,w=Z.bits,b=Z.lencode,m=Z.distcode,k=(1<<Z.lenbits)-1,_=(1<<Z.distbits)-1;e:do{w<15&&(u+=R[i++]<<w,w+=8,u+=R[i++]<<w,w+=8),g=b[u&k];t:for(;;){if(p=g>>>24,u>>>=p,w-=p,p=g>>>16&255,0===p)A[r++]=65535&g;else{if(!(16&p)){if(0==(64&p)){g=b[(65535&g)+(u&(1<<p)-1)];continue t}if(32&p){Z.mode=16191;break e}e.msg="invalid literal/length code",Z.mode=a;break e}v=65535&g,p&=15,p&&(w<p&&(u+=R[i++]<<w,w+=8),v+=u&(1<<p)-1,u>>>=p,w-=p),w<15&&(u+=R[i++]<<w,w+=8,u+=R[i++]<<w,w+=8),g=m[u&_];i:for(;;){if(p=g>>>24,u>>>=p,w-=p,p=g>>>16&255,!(16&p)){if(0==(64&p)){g=m[(65535&g)+(u&(1<<p)-1)];continue i}e.msg="invalid distance code",Z.mode=a;break e}if(x=65535&g,p&=15,w<p&&(u+=R[i++]<<w,w+=8,w<p&&(u+=R[i++]<<w,w+=8)),x+=u&(1<<p)-1,x>l){e.msg="invalid distance too far back",Z.mode=a;break e}if(u>>>=p,w-=p,p=r-o,x>p){if(p=x-p,p>f&&Z.sane){e.msg="invalid distance too far back",Z.mode=a;break e}if(y=0,E=h,0===c){if(y+=d-p,p<v){v-=p;do{A[r++]=h[y++]}while(--p);y=r-x,E=A}}else if(c<p){if(y+=d+c-p,p-=c,p<v){v-=p;do{A[r++]=h[y++]}while(--p);if(y=0,c<v){p=c,v-=p;do{A[r++]=h[y++]}while(--p);y=r-x,E=A}}}else if(y+=c-p,p<v){v-=p;do{A[r++]=h[y++]}while(--p);y=r-x,E=A}for(;v>2;)A[r++]=E[y++],A[r++]=E[y++],A[r++]=E[y++],v-=3;v&&(A[r++]=E[y++],v>1&&(A[r++]=E[y++]))}else{y=r-x;do{A[r++]=A[y++],A[r++]=A[y++],A[r++]=A[y++],v-=3}while(v>2);v&&(A[r++]=A[y++],v>1&&(A[r++]=A[y++]))}break}}break}}while(i<n&&r<s);v=w>>3,i-=v,w-=v<<3,u&=(1<<w)-1,e.next_in=i,e.next_out=r,e.avail_in=i<n?n-i+5:5-(i-n),e.avail_out=r<s?s-r+257:257-(r-s),Z.hold=u,Z.bits=w};const o=15,s=new Uint16Array([3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258,0,0]),l=new Uint8Array([16,16,16,16,16,16,16,16,17,17,17,17,18,18,18,18,19,19,19,19,20,20,20,20,21,21,21,21,16,72,78]),d=new Uint16Array([1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577,0,0]),f=new Uint8Array([16,16,16,16,17,17,18,18,19,19,20,20,21,21,22,22,23,23,24,24,25,25,26,26,27,27,28,28,29,29,64,64]);var c=(e,t,i,n,a,r,c,h)=>{const u=h.bits;let w,b,m,k,_,g,p=0,v=0,x=0,y=0,E=0,R=0,A=0,Z=0,S=0,T=0,O=null;const U=new Uint16Array(16),D=new Uint16Array(16);let I,B,N,C=null;for(p=0;p<=o;p++)U[p]=0;for(v=0;v<n;v++)U[t[i+v]]++;for(E=u,y=o;y>=1&&0===U[y];y--);if(E>y&&(E=y),0===y)return a[r++]=20971520,a[r++]=20971520,h.bits=1,0;for(x=1;x<y&&0===U[x];x++);for(E<x&&(E=x),Z=1,p=1;p<=o;p++)if(Z<<=1,Z-=U[p],Z<0)return-1;if(Z>0&&(0===e||1!==y))return-1;for(D[1]=0,p=1;p<o;p++)D[p+1]=D[p]+U[p];for(v=0;v<n;v++)0!==t[i+v]&&(c[D[t[i+v]]++]=v);if(0===e?(O=C=c,g=20):1===e?(O=s,C=l,g=257):(O=d,C=f,g=0),T=0,v=0,p=x,_=r,R=E,A=0,m=-1,S=1<<E,k=S-1,1===e&&S>852||2===e&&S>592)return 1;for(;;){I=p-A,c[v]+1<g?(B=0,N=c[v]):c[v]>=g?(B=C[c[v]-g],N=O[c[v]-g]):(B=96,N=0),w=1<<p-A,b=1<<R,x=b;do{b-=w,a[_+(T>>A)+b]=I<<24|B<<16|N|0}while(0!==b);for(w=1<<p-1;T&w;)w>>=1;if(0!==w?(T&=w-1,T+=w):T=0,v++,0==--U[p]){if(p===y)break;p=t[i+c[v]]}if(p>E&&(T&k)!==m){for(0===A&&(A=E),_+=x,R=p-A,Z=1<<R;R+A<y&&(Z-=U[R+A],!(Z<=0));)R++,Z<<=1;if(S+=1<<R,1===e&&S>852||2===e&&S>592)return 1;m=T&k,a[m]=E<<24|R<<16|_-r|0}}return 0!==T&&(a[_+T]=p-A<<24|64<<16|0),h.bits=E,0},h={Z_NO_FLUSH:0,Z_PARTIAL_FLUSH:1,Z_SYNC_FLUSH:2,Z_FULL_FLUSH:3,Z_FINISH:4,Z_BLOCK:5,Z_TREES:6,Z_OK:0,Z_STREAM_END:1,Z_NEED_DICT:2,Z_ERRNO:-1,Z_STREAM_ERROR:-2,Z_DATA_ERROR:-3,Z_MEM_ERROR:-4,Z_BUF_ERROR:-5,Z_NO_COMPRESSION:0,Z_BEST_SPEED:1,Z_BEST_COMPRESSION:9,Z_DEFAULT_COMPRESSION:-1,Z_FILTERED:1,Z_HUFFMAN_ONLY:2,Z_RLE:3,Z_FIXED:4,Z_DEFAULT_STRATEGY:0,Z_BINARY:0,Z_TEXT:1,Z_UNKNOWN:2,Z_DEFLATED:8};const{Z_FINISH:u,Z_BLOCK:w,Z_TREES:b,Z_OK:m,Z_STREAM_END:k,Z_NEED_DICT:_,Z_STREAM_ERROR:g,Z_DATA_ERROR:p,Z_MEM_ERROR:v,Z_BUF_ERROR:x,Z_DEFLATED:y}=h,E=16180,R=16190,A=16191,Z=16192,S=16194,T=16199,O=16200,U=16206,D=16209,I=e=>(e>>>24&255)+(e>>>8&65280)+((65280&e)<<8)+((255&e)<<24);function B(){this.strm=null,this.mode=0,this.last=!1,this.wrap=0,this.havedict=!1,this.flags=0,this.dmax=0,this.check=0,this.total=0,this.head=null,this.wbits=0,this.wsize=0,this.whave=0,this.wnext=0,this.window=null,this.hold=0,this.bits=0,this.length=0,this.offset=0,this.extra=0,this.lencode=null,this.distcode=null,this.lenbits=0,this.distbits=0,this.ncode=0,this.nlen=0,this.ndist=0,this.have=0,this.next=null,this.lens=new Uint16Array(320),this.work=new Uint16Array(288),this.lendyn=null,this.distdyn=null,this.sane=0,this.back=0,this.was=0}const N=e=>{if(!e)return 1;const t=e.state;return!t||t.strm!==e||t.mode<E||t.mode>16211?1:0},C=e=>{if(N(e))return g;const t=e.state;return e.total_in=e.total_out=t.total=0,e.msg="",t.wrap&&(e.adler=1&t.wrap),t.mode=E,t.last=0,t.havedict=0,t.flags=-1,t.dmax=32768,t.head=null,t.hold=0,t.bits=0,t.lencode=t.lendyn=new Int32Array(852),t.distcode=t.distdyn=new Int32Array(592),t.sane=1,t.back=-1,m},z=e=>{if(N(e))return g;const t=e.state;return t.wsize=0,t.whave=0,t.wnext=0,C(e)},F=(e,t)=>{let i;if(N(e))return g;const n=e.state;return t<0?(i=0,t=-t):(i=5+(t>>4),t<48&&(t&=15)),t&&(t<8||t>15)?g:(null!==n.window&&n.wbits!==t&&(n.window=null),n.wrap=i,n.wbits=t,z(e))},L=(e,t)=>{if(!e)return g;const i=new B;e.state=i,i.strm=e,i.window=null,i.mode=E;const n=F(e,t);return n!==m&&(e.state=null),n};let M,H,j=!0;const K=e=>{if(j){M=new Int32Array(512),H=new Int32Array(32);let t=0;for(;t<144;)e.lens[t++]=8;for(;t<256;)e.lens[t++]=9;for(;t<280;)e.lens[t++]=7;for(;t<288;)e.lens[t++]=8;for(c(1,e.lens,0,288,M,0,e.work,{bits:9}),t=0;t<32;)e.lens[t++]=5;c(2,e.lens,0,32,H,0,e.work,{bits:5}),j=!1}e.lencode=M,e.lenbits=9,e.distcode=H,e.distbits=5},P=(e,t,i,n)=>{let a;const r=e.state;return null===r.window&&(r.wsize=1<<r.wbits,r.wnext=0,r.whave=0,r.window=new Uint8Array(r.wsize)),n>=r.wsize?(r.window.set(t.subarray(i-r.wsize,i),0),r.wnext=0,r.whave=r.wsize):(a=r.wsize-r.wnext,a>n&&(a=n),r.window.set(t.subarray(i-n,i-n+a),r.wnext),(n-=a)?(r.window.set(t.subarray(i-n,i),0),r.wnext=n,r.whave=r.wsize):(r.wnext+=a,r.wnext===r.wsize&&(r.wnext=0),r.whave<r.wsize&&(r.whave+=a))),0};var Y={inflateReset:z,inflateReset2:F,inflateResetKeep:C,inflateInit:e=>L(e,15),inflateInit2:L,inflate:(e,i)=>{let a,o,s,l,d,f,h,B,C,z,F,L,M,H,j,Y,G,X,W,q,J,Q,V=0;const $=new Uint8Array(4);let ee,te;const ie=new Uint8Array([16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15]);if(N(e)||!e.output||!e.input&&0!==e.avail_in)return g;a=e.state,a.mode===A&&(a.mode=Z),d=e.next_out,s=e.output,h=e.avail_out,l=e.next_in,o=e.input,f=e.avail_in,B=a.hold,C=a.bits,z=f,F=h,Q=m;e:for(;;)switch(a.mode){case E:if(0===a.wrap){a.mode=Z;break}for(;C<16;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}if(2&a.wrap&&35615===B){0===a.wbits&&(a.wbits=15),a.check=0,$[0]=255&B,$[1]=B>>>8&255,a.check=n(a.check,$,2,0),B=0,C=0,a.mode=16181;break}if(a.head&&(a.head.done=!1),!(1&a.wrap)||(((255&B)<<8)+(B>>8))%31){e.msg="incorrect header check",a.mode=D;break}if((15&B)!==y){e.msg="unknown compression method",a.mode=D;break}if(B>>>=4,C-=4,J=8+(15&B),0===a.wbits&&(a.wbits=J),J>15||J>a.wbits){e.msg="invalid window size",a.mode=D;break}a.dmax=1<<a.wbits,a.flags=0,e.adler=a.check=1,a.mode=512&B?16189:A,B=0,C=0;break;case 16181:for(;C<16;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}if(a.flags=B,(255&a.flags)!==y){e.msg="unknown compression method",a.mode=D;break}if(57344&a.flags){e.msg="unknown header flags set",a.mode=D;break}a.head&&(a.head.text=B>>8&1),512&a.flags&&4&a.wrap&&($[0]=255&B,$[1]=B>>>8&255,a.check=n(a.check,$,2,0)),B=0,C=0,a.mode=16182;case 16182:for(;C<32;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}a.head&&(a.head.time=B),512&a.flags&&4&a.wrap&&($[0]=255&B,$[1]=B>>>8&255,$[2]=B>>>16&255,$[3]=B>>>24&255,a.check=n(a.check,$,4,0)),B=0,C=0,a.mode=16183;case 16183:for(;C<16;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}a.head&&(a.head.xflags=255&B,a.head.os=B>>8),512&a.flags&&4&a.wrap&&($[0]=255&B,$[1]=B>>>8&255,a.check=n(a.check,$,2,0)),B=0,C=0,a.mode=16184;case 16184:if(1024&a.flags){for(;C<16;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}a.length=B,a.head&&(a.head.extra_len=B),512&a.flags&&4&a.wrap&&($[0]=255&B,$[1]=B>>>8&255,a.check=n(a.check,$,2,0)),B=0,C=0}else a.head&&(a.head.extra=null);a.mode=16185;case 16185:if(1024&a.flags&&(L=a.length,L>f&&(L=f),L&&(a.head&&(J=a.head.extra_len-a.length,a.head.extra||(a.head.extra=new Uint8Array(a.head.extra_len)),a.head.extra.set(o.subarray(l,l+L),J)),512&a.flags&&4&a.wrap&&(a.check=n(a.check,o,L,l)),f-=L,l+=L,a.length-=L),a.length))break e;a.length=0,a.mode=16186;case 16186:if(2048&a.flags){if(0===f)break e;L=0;do{J=o[l+L++],a.head&&J&&a.length<65536&&(a.head.name+=String.fromCharCode(J))}while(J&&L<f);if(512&a.flags&&4&a.wrap&&(a.check=n(a.check,o,L,l)),f-=L,l+=L,J)break e}else a.head&&(a.head.name=null);a.length=0,a.mode=16187;case 16187:if(4096&a.flags){if(0===f)break e;L=0;do{J=o[l+L++],a.head&&J&&a.length<65536&&(a.head.comment+=String.fromCharCode(J))}while(J&&L<f);if(512&a.flags&&4&a.wrap&&(a.check=n(a.check,o,L,l)),f-=L,l+=L,J)break e}else a.head&&(a.head.comment=null);a.mode=16188;case 16188:if(512&a.flags){for(;C<16;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}if(4&a.wrap&&B!==(65535&a.check)){e.msg="header crc mismatch",a.mode=D;break}B=0,C=0}a.head&&(a.head.hcrc=a.flags>>9&1,a.head.done=!0),e.adler=a.check=0,a.mode=A;break;case 16189:for(;C<32;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}e.adler=a.check=I(B),B=0,C=0,a.mode=R;case R:if(0===a.havedict)return e.next_out=d,e.avail_out=h,e.next_in=l,e.avail_in=f,a.hold=B,a.bits=C,_;e.adler=a.check=1,a.mode=A;case A:if(i===w||i===b)break e;case Z:if(a.last){B>>>=7&C,C-=7&C,a.mode=U;break}for(;C<3;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}switch(a.last=1&B,B>>>=1,C-=1,3&B){case 0:a.mode=16193;break;case 1:if(K(a),a.mode=T,i===b){B>>>=2,C-=2;break e}break;case 2:a.mode=16196;break;case 3:e.msg="invalid block type",a.mode=D}B>>>=2,C-=2;break;case 16193:for(B>>>=7&C,C-=7&C;C<32;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}if((65535&B)!=(B>>>16^65535)){e.msg="invalid stored block lengths",a.mode=D;break}if(a.length=65535&B,B=0,C=0,a.mode=S,i===b)break e;case S:a.mode=16195;case 16195:if(L=a.length,L){if(L>f&&(L=f),L>h&&(L=h),0===L)break e;s.set(o.subarray(l,l+L),d),f-=L,l+=L,h-=L,d+=L,a.length-=L;break}a.mode=A;break;case 16196:for(;C<14;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}if(a.nlen=257+(31&B),B>>>=5,C-=5,a.ndist=1+(31&B),B>>>=5,C-=5,a.ncode=4+(15&B),B>>>=4,C-=4,a.nlen>286||a.ndist>30){e.msg="too many length or distance symbols",a.mode=D;break}a.have=0,a.mode=16197;case 16197:for(;a.have<a.ncode;){for(;C<3;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}a.lens[ie[a.have++]]=7&B,B>>>=3,C-=3}for(;a.have<19;)a.lens[ie[a.have++]]=0;if(a.lencode=a.lendyn,a.lenbits=7,ee={bits:a.lenbits},Q=c(0,a.lens,0,19,a.lencode,0,a.work,ee),a.lenbits=ee.bits,Q){e.msg="invalid code lengths set",a.mode=D;break}a.have=0,a.mode=16198;case 16198:for(;a.have<a.nlen+a.ndist;){for(;V=a.lencode[B&(1<<a.lenbits)-1],j=V>>>24,Y=V>>>16&255,G=65535&V,!(j<=C);){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}if(G<16)B>>>=j,C-=j,a.lens[a.have++]=G;else{if(16===G){for(te=j+2;C<te;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}if(B>>>=j,C-=j,0===a.have){e.msg="invalid bit length repeat",a.mode=D;break}J=a.lens[a.have-1],L=3+(3&B),B>>>=2,C-=2}else if(17===G){for(te=j+3;C<te;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}B>>>=j,C-=j,J=0,L=3+(7&B),B>>>=3,C-=3}else{for(te=j+7;C<te;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}B>>>=j,C-=j,J=0,L=11+(127&B),B>>>=7,C-=7}if(a.have+L>a.nlen+a.ndist){e.msg="invalid bit length repeat",a.mode=D;break}for(;L--;)a.lens[a.have++]=J}}if(a.mode===D)break;if(0===a.lens[256]){e.msg="invalid code -- missing end-of-block",a.mode=D;break}if(a.lenbits=9,ee={bits:a.lenbits},Q=c(1,a.lens,0,a.nlen,a.lencode,0,a.work,ee),a.lenbits=ee.bits,Q){e.msg="invalid literal/lengths set",a.mode=D;break}if(a.distbits=6,a.distcode=a.distdyn,ee={bits:a.distbits},Q=c(2,a.lens,a.nlen,a.ndist,a.distcode,0,a.work,ee),a.distbits=ee.bits,Q){e.msg="invalid distances set",a.mode=D;break}if(a.mode=T,i===b)break e;case T:a.mode=O;case O:if(f>=6&&h>=258){e.next_out=d,e.avail_out=h,e.next_in=l,e.avail_in=f,a.hold=B,a.bits=C,r(e,F),d=e.next_out,s=e.output,h=e.avail_out,l=e.next_in,o=e.input,f=e.avail_in,B=a.hold,C=a.bits,a.mode===A&&(a.back=-1);break}for(a.back=0;V=a.lencode[B&(1<<a.lenbits)-1],j=V>>>24,Y=V>>>16&255,G=65535&V,!(j<=C);){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}if(Y&&0==(240&Y)){for(X=j,W=Y,q=G;V=a.lencode[q+((B&(1<<X+W)-1)>>X)],j=V>>>24,Y=V>>>16&255,G=65535&V,!(X+j<=C);){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}B>>>=X,C-=X,a.back+=X}if(B>>>=j,C-=j,a.back+=j,a.length=G,0===Y){a.mode=16205;break}if(32&Y){a.back=-1,a.mode=A;break}if(64&Y){e.msg="invalid literal/length code",a.mode=D;break}a.extra=15&Y,a.mode=16201;case 16201:if(a.extra){for(te=a.extra;C<te;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}a.length+=B&(1<<a.extra)-1,B>>>=a.extra,C-=a.extra,a.back+=a.extra}a.was=a.length,a.mode=16202;case 16202:for(;V=a.distcode[B&(1<<a.distbits)-1],j=V>>>24,Y=V>>>16&255,G=65535&V,!(j<=C);){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}if(0==(240&Y)){for(X=j,W=Y,q=G;V=a.distcode[q+((B&(1<<X+W)-1)>>X)],j=V>>>24,Y=V>>>16&255,G=65535&V,!(X+j<=C);){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}B>>>=X,C-=X,a.back+=X}if(B>>>=j,C-=j,a.back+=j,64&Y){e.msg="invalid distance code",a.mode=D;break}a.offset=G,a.extra=15&Y,a.mode=16203;case 16203:if(a.extra){for(te=a.extra;C<te;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}a.offset+=B&(1<<a.extra)-1,B>>>=a.extra,C-=a.extra,a.back+=a.extra}if(a.offset>a.dmax){e.msg="invalid distance too far back",a.mode=D;break}a.mode=16204;case 16204:if(0===h)break e;if(L=F-h,a.offset>L){if(L=a.offset-L,L>a.whave&&a.sane){e.msg="invalid distance too far back",a.mode=D;break}L>a.wnext?(L-=a.wnext,M=a.wsize-L):M=a.wnext-L,L>a.length&&(L=a.length),H=a.window}else H=s,M=d-a.offset,L=a.length;L>h&&(L=h),h-=L,a.length-=L;do{s[d++]=H[M++]}while(--L);0===a.length&&(a.mode=O);break;case 16205:if(0===h)break e;s[d++]=a.length,h--,a.mode=O;break;case U:if(a.wrap){for(;C<32;){if(0===f)break e;f--,B|=o[l++]<<C,C+=8}if(F-=h,e.total_out+=F,a.total+=F,4&a.wrap&&F&&(e.adler=a.check=a.flags?n(a.check,s,F,d-F):t(a.check,s,F,d-F)),F=h,4&a.wrap&&(a.flags?B:I(B))!==a.check){e.msg="incorrect data check",a.mode=D;break}B=0,C=0}a.mode=16207;case 16207:if(a.wrap&&a.flags){for(;C<32;){if(0===f)break e;f--,B+=o[l++]<<C,C+=8}if(4&a.wrap&&B!==(4294967295&a.total)){e.msg="incorrect length check",a.mode=D;break}B=0,C=0}a.mode=16208;case 16208:Q=k;break e;case D:Q=p;break e;case 16210:return v;default:return g}return e.next_out=d,e.avail_out=h,e.next_in=l,e.avail_in=f,a.hold=B,a.bits=C,(a.wsize||F!==e.avail_out&&a.mode<D&&(a.mode<U||i!==u))&&P(e,e.output,e.next_out,F-e.avail_out),z-=e.avail_in,F-=e.avail_out,e.total_in+=z,e.total_out+=F,a.total+=F,4&a.wrap&&F&&(e.adler=a.check=a.flags?n(a.check,s,F,e.next_out-F):t(a.check,s,F,e.next_out-F)),e.data_type=a.bits+(a.last?64:0)+(a.mode===A?128:0)+(a.mode===T||a.mode===S?256:0),(0===z&&0===F||i===u)&&Q===m&&(Q=x),Q},inflateEnd:e=>{if(N(e))return g;let t=e.state;return t.window&&(t.window=null),e.state=null,m},inflateGetHeader:(e,t)=>{if(N(e))return g;const i=e.state;return 0==(2&i.wrap)?g:(i.head=t,t.done=!1,m)},inflateSetDictionary:(e,i)=>{const n=i.length;let a,r,o;return N(e)?g:(a=e.state,0!==a.wrap&&a.mode!==R?g:a.mode===R&&(r=1,r=t(r,i,n,0),r!==a.check)?p:(o=P(e,i,n,n),o?(a.mode=16210,v):(a.havedict=1,m)))},inflateInfo:"pako inflate (from Nodeca project)"};const G=(e,t)=>Object.prototype.hasOwnProperty.call(e,t);var X=function(e){const t=Array.prototype.slice.call(arguments,1);for(;t.length;){const i=t.shift();if(i){if("object"!=typeof i)throw new TypeError(i+"must be non-object");for(const t in i)G(i,t)&&(e[t]=i[t])}}return e},W=e=>{let t=0;for(let i=0,n=e.length;i<n;i++)t+=e[i].length;const i=new Uint8Array(t);for(let t=0,n=0,a=e.length;t<a;t++){let a=e[t];i.set(a,n),n+=a.length}return i};let q=!0;try{String.fromCharCode.apply(null,new Uint8Array(1))}catch(e){q=!1}const J=new Uint8Array(256);for(let e=0;e<256;e++)J[e]=e>=252?6:e>=248?5:e>=240?4:e>=224?3:e>=192?2:1;J[254]=J[254]=1;var Q=e=>{if("function"==typeof TextEncoder&&TextEncoder.prototype.encode)return(new TextEncoder).encode(e);let t,i,n,a,r,o=e.length,s=0;for(a=0;a<o;a++)i=e.charCodeAt(a),55296==(64512&i)&&a+1<o&&(n=e.charCodeAt(a+1),56320==(64512&n)&&(i=65536+(i-55296<<10)+(n-56320),a++)),s+=i<128?1:i<2048?2:i<65536?3:4;for(t=new Uint8Array(s),r=0,a=0;r<s;a++)i=e.charCodeAt(a),55296==(64512&i)&&a+1<o&&(n=e.charCodeAt(a+1),56320==(64512&n)&&(i=65536+(i-55296<<10)+(n-56320),a++)),i<128?t[r++]=i:i<2048?(t[r++]=192|i>>>6,t[r++]=128|63&i):i<65536?(t[r++]=224|i>>>12,t[r++]=128|i>>>6&63,t[r++]=128|63&i):(t[r++]=240|i>>>18,t[r++]=128|i>>>12&63,t[r++]=128|i>>>6&63,t[r++]=128|63&i);return t},V=(e,t)=>{const i=t||e.length;if("function"==typeof TextDecoder&&TextDecoder.prototype.decode)return(new TextDecoder).decode(e.subarray(0,t));let n,a;const r=new Array(2*i);for(a=0,n=0;n<i;){let t=e[n++];if(t<128){r[a++]=t;continue}let o=J[t];if(o>4)r[a++]=65533,n+=o-1;else{for(t&=2===o?31:3===o?15:7;o>1&&n<i;)t=t<<6|63&e[n++],o--;o>1?r[a++]=65533:t<65536?r[a++]=t:(t-=65536,r[a++]=55296|t>>10&1023,r[a++]=56320|1023&t)}}return((e,t)=>{if(t<65534&&e.subarray&&q)return String.fromCharCode.apply(null,e.length===t?e:e.subarray(0,t));let i="";for(let n=0;n<t;n++)i+=String.fromCharCode(e[n]);return i})(r,a)},$=(e,t)=>{(t=t||e.length)>e.length&&(t=e.length);let i=t-1;for(;i>=0&&128==(192&e[i]);)i--;return i<0||0===i?t:i+J[e[i]]>t?i:t},ee={2:"need dictionary",1:"stream end",0:"","-1":"file error","-2":"stream error","-3":"data error","-4":"insufficient memory","-5":"buffer error","-6":"incompatible version"};var te=function(){this.input=null,this.next_in=0,this.avail_in=0,this.total_in=0,this.output=null,this.next_out=0,this.avail_out=0,this.total_out=0,this.msg="",this.state=null,this.data_type=2,this.adler=0};var ie=function(){this.text=0,this.time=0,this.xflags=0,this.os=0,this.extra=null,this.extra_len=0,this.name="",this.comment="",this.hcrc=0,this.done=!1};const ne=Object.prototype.toString,{Z_NO_FLUSH:ae,Z_FINISH:re,Z_OK:oe,Z_STREAM_END:se,Z_NEED_DICT:le,Z_STREAM_ERROR:de,Z_DATA_ERROR:fe,Z_MEM_ERROR:ce}=h;function he(e){this.options=X({chunkSize:65536,windowBits:15,to:""},e||{});const t=this.options;t.raw&&t.windowBits>=0&&t.windowBits<16&&(t.windowBits=-t.windowBits,0===t.windowBits&&(t.windowBits=-15)),!(t.windowBits>=0&&t.windowBits<16)||e&&e.windowBits||(t.windowBits+=32),t.windowBits>15&&t.windowBits<48&&0==(15&t.windowBits)&&(t.windowBits|=15),this.err=0,this.msg="",this.ended=!1,this.chunks=[],this.strm=new te,this.strm.avail_out=0;let i=Y.inflateInit2(this.strm,t.windowBits);if(i!==oe)throw new Error(ee[i]);if(this.header=new ie,Y.inflateGetHeader(this.strm,this.header),t.dictionary&&("string"==typeof t.dictionary?t.dictionary=Q(t.dictionary):"[object ArrayBuffer]"===ne.call(t.dictionary)&&(t.dictionary=new Uint8Array(t.dictionary)),t.raw&&(i=Y.inflateSetDictionary(this.strm,t.dictionary),i!==oe)))throw new Error(ee[i])}function ue(e,t){const i=new he(t);if(i.push(e),i.err)throw i.msg||ee[i.err];return i.result}he.prototype.push=function(e,t){const i=this.strm,n=this.options.chunkSize,a=this.options.dictionary;let r,o,s;if(this.ended)return!1;for(o=t===~~t?t:!0===t?re:ae,"[object ArrayBuffer]"===ne.call(e)?i.input=new Uint8Array(e):i.input=e,i.next_in=0,i.avail_in=i.input.length;;){for(0===i.avail_out&&(i.output=new Uint8Array(n),i.next_out=0,i.avail_out=n),r=Y.inflate(i,o),r===le&&a&&(r=Y.inflateSetDictionary(i,a),r===oe?r=Y.inflate(i,o):r===fe&&(r=le));i.avail_in>0&&r===se&&i.state.wrap>0&&0!==e[i.next_in];)Y.inflateReset(i),r=Y.inflate(i,o);switch(r){case de:case fe:case le:case ce:return this.onEnd(r),this.ended=!0,!1}if(s=i.avail_out,i.next_out&&(0===i.avail_out||r===se))if("string"===this.options.to){let e=$(i.output,i.next_out),t=i.next_out-e,a=V(i.output,e);i.next_out=t,i.avail_out=n-t,t&&i.output.set(i.output.subarray(e,e+t),0),this.onData(a)}else this.onData(i.output.length===i.next_out?i.output:i.output.subarray(0,i.next_out));if(r!==oe||0!==s){if(r===se)return r=Y.inflateEnd(this.strm),this.onEnd(r),this.ended=!0,!0;if(0===i.avail_in)break}}return!0},he.prototype.onData=function(e){this.chunks.push(e)},he.prototype.onEnd=function(e){e===oe&&("string"===this.options.to?this.result=this.chunks.join(""):this.result=W(this.chunks)),this.chunks=[],this.err=e,this.msg=this.strm.msg};var we=he,be=ue,me=function(e,t){return(t=t||{}).raw=!0,ue(e,t)},ke=ue,_e=h,ge={Inflate:we,inflate:be,inflateRaw:me,ungzip:ke,constants:_e};e.Inflate=we,e.constants=_e,e.default=ge,e.inflate=be,e.inflateRaw=me,e.ungzip=ke,Object.defineProperty(e,"__esModule",{value:!0})}));
+
+</script>
+<script>
+// HWP 5.x (CFB) and HWPX (zip) text extraction for the browser. Also loads in Node for tests.
+// inflateRaw(Uint8Array) -> Promise<Uint8Array> must be supplied.
+(function (root) {
+  "use strict";
+
+  function u16(b, o) { return b[o] | (b[o + 1] << 8); }
+  function u32(b, o) { return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0; }
+
+  // ---------- Compound File Binary ----------
+  function readCFB(buf) {
+    const sig = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
+    for (let i = 0; i < 8; i++) if (buf[i] !== sig[i]) throw new Error("HWP 파일 형식이 아님.");
+    const secSize = 1 << u16(buf, 30);
+    const miniSize = 1 << u16(buf, 32);
+    const nFat = u32(buf, 44);
+    const dirStart = u32(buf, 48);
+    const miniCutoff = u32(buf, 56);
+    const miniFatStart = u32(buf, 60);
+    const nMiniFat = u32(buf, 64);
+    let difatStart = u32(buf, 68);
+    const nDifat = u32(buf, 72);
+    const ENDOFCHAIN = 0xFFFFFFFE, FREESECT = 0xFFFFFFFF;
+    const secOff = (s) => (s + 1) * secSize;
+
+    const difat = [];
+    for (let i = 0; i < 109; i++) { const v = u32(buf, 76 + i * 4); if (v !== FREESECT) difat.push(v); }
+    let ds = difatStart;
+    for (let k = 0; k < nDifat && ds !== ENDOFCHAIN && ds !== FREESECT; k++) {
+      const o = secOff(ds), per = secSize / 4 - 1;
+      for (let i = 0; i < per; i++) { const v = u32(buf, o + i * 4); if (v !== FREESECT) difat.push(v); }
+      ds = u32(buf, o + per * 4);
+    }
+    const fat = [];
+    for (let i = 0; i < Math.min(nFat, difat.length); i++) {
+      const o = secOff(difat[i]);
+      for (let j = 0; j < secSize / 4; j++) fat.push(u32(buf, o + j * 4));
+    }
+    function chain(start, table) {
+      const out = []; let s = start, guard = 0;
+      while (s !== ENDOFCHAIN && s !== FREESECT && s < table.length && guard++ < 1e7) { out.push(s); s = table[s]; }
+      return out;
+    }
+    function readBig(start, size) {
+      const secs = chain(start, fat);
+      const out = new Uint8Array(secs.length * secSize);
+      secs.forEach((s, i) => out.set(buf.subarray(secOff(s), secOff(s) + secSize), i * secSize));
+      return size == null ? out : out.subarray(0, size);
+    }
+    const dirBytes = readBig(dirStart);
+    const entries = [];
+    for (let o = 0; o + 128 <= dirBytes.length; o += 128) {
+      const nameLen = u16(dirBytes, o + 64);
+      let name = "";
+      for (let i = 0; i < Math.max(0, nameLen / 2 - 1); i++) name += String.fromCharCode(u16(dirBytes, o + i * 2));
+      entries.push({
+        name, type: dirBytes[o + 66],
+        left: u32(dirBytes, o + 68), right: u32(dirBytes, o + 72), child: u32(dirBytes, o + 76),
+        start: u32(dirBytes, o + 116), size: u32(dirBytes, o + 120),
+      });
+    }
+    const rootE = entries[0];
+    const miniStream = readBig(rootE.start, rootE.size);
+    let miniFat = [];
+    if (nMiniFat > 0) {
+      const mf = readBig(miniFatStart);
+      for (let j = 0; j < mf.length / 4; j++) miniFat.push(u32(mf, j * 4));
+    }
+    function readStream(e) {
+      if (e.size < miniCutoff) {
+        const secs = chain(e.start, miniFat);
+        const out = new Uint8Array(secs.length * miniSize);
+        secs.forEach((s, i) => out.set(miniStream.subarray(s * miniSize, (s + 1) * miniSize), i * miniSize));
+        return out.subarray(0, e.size);
+      }
+      return readBig(e.start, e.size);
+    }
+    // Build path map by walking the red-black trees.
+    const paths = {};
+    function walk(idx, prefix, seen) {
+      if (idx === FREESECT || idx >= entries.length || seen.has(idx)) return;
+      seen.add(idx);
+      const e = entries[idx];
+      walk(e.left, prefix, seen);
+      const p = prefix ? prefix + "/" + e.name : e.name;
+      paths[p] = e;
+      if (e.type === 1 && e.child !== FREESECT) walk(e.child, p, seen);
+      walk(e.right, prefix, seen);
+    }
+    walk(rootE.child, "", new Set());
+    return { paths, readStream };
+  }
+
+  // ---------- HWP 5 body records ----------
+  const PARA_HEADER = 66, PARA_TEXT = 67, PARA_CHAR_SHAPE = 68, CTRL_HEADER = 71, PAGE_DEF = 73;
+  const CHAR_CTRL = new Set([0, 10, 13, 24, 25, 26, 27, 28, 29, 30, 31]);
+
+  function paraText(b) {
+    let s = "";
+    for (let i = 0; i + 1 < b.length;) {
+      const c = u16(b, i);
+      if (c < 32) {
+        if (CHAR_CTRL.has(c)) {
+          if (c === 10) s += "\n";
+          else if (c === 30 || c === 31) s += " ";
+          else if (c === 24) s += "-";
+          i += 2;
+        } else {
+          if (c === 9) s += "\t";
+          i += 16;
+        }
+      } else { s += String.fromCharCode(c); i += 2; }
+    }
+    return s;
+  }
+
+  function records(data, fn) {
+    for (let o = 0; o + 4 <= data.length;) {
+      const h = u32(data, o); o += 4;
+      const tag = h & 0x3FF, level = (h >>> 10) & 0x3FF;
+      let size = (h >>> 20) & 0xFFF;
+      if (size === 0xFFF) { size = u32(data, o); o += 4; }
+      fn(tag, level, data.subarray(o, o + size));
+      o += size;
+    }
+  }
+
+  function ctrlName(id) {
+    return String.fromCharCode((id >>> 24) & 255, (id >>> 16) & 255, (id >>> 8) & 255, id & 255);
+  }
+
+  function parseSection(data, info) {
+    const paras = [];
+    let cur = null;
+    records(data, (tag, level, body) => {
+      if (tag === PARA_HEADER) {
+        cur = { level, text: "", paraShape: body.length >= 10 ? u16(body, 8) : 0, charShapes: [], ctrls: [] };
+        paras.push(cur);
+      } else if (tag === PARA_TEXT && cur) cur.text += paraText(body);
+      else if (tag === PARA_CHAR_SHAPE && cur) {
+        for (let i = 0; i + 8 <= body.length; i += 8) cur.charShapes.push({ pos: u32(body, i), id: u32(body, i + 4) });
+      } else if (tag === CTRL_HEADER && cur && body.length >= 4) cur.ctrls.push(ctrlName(u32(body, 0)));
+      else if (tag === PAGE_DEF && info && body.length >= 40) {
+        info.pages.push({ w: u32(body, 0), h: u32(body, 4), landscape: !!(u32(body, 36) & 1) });
+      }
+    });
+    return paras;
+  }
+
+  function parseDocInfo(data) {
+    const faces = [], charShapes = [], paraShapes = [];
+    let koCount = null, faceIdx = 0;
+    const koFaces = [];
+    records(data, (tag, level, b) => {
+      if (tag === 17 && b.length >= 8) koCount = u32(b, 4);
+      else if (tag === 19) {
+        const len = u16(b, 1); let name = "";
+        for (let i = 0; i < len; i++) name += String.fromCharCode(u16(b, 3 + i * 2));
+        if (koCount == null || faceIdx < koCount) koFaces.push(name);
+        faceIdx++;
+      } else if (tag === 21 && b.length >= 50) {
+        charShapes.push({ faceKo: u16(b, 0), ratioKo: b[14], spacingKo: (b[21] << 24) >> 24, relSizeKo: b[28], size: u32(b, 42), flags: u32(b, 46) });
+      } else if (tag === 25 && b.length >= 28) {
+        const f = u32(b, 0);
+        let lsType = f & 3, ls = u32(b, 24) | 0;
+        if (b.length >= 54) { lsType = u32(b, 46) & 0x1F; ls = u32(b, 50) | 0; }
+        paraShapes.push({ align: (f >>> 2) & 7, lsType, ls, marginLeft: u32(b, 4) | 0, indent: u32(b, 12) | 0 });
+      }
+    });
+    return { koFaces, charShapes, paraShapes };
+  }
+
+  function linesFromParas(paras) {
+    const out = []; let line = 1;
+    for (const p of paras) {
+      p.line = line;
+      out.push(p.text);
+      line += 1 + (p.text.match(/\n/g) || []).length;
+    }
+    return out.join("\n");
+  }
+
+  async function hwpAnalyze(buf, inflateRaw) {
+    const cfb = readCFB(buf);
+    const fh = cfb.paths["FileHeader"];
+    if (!fh) throw new Error("HWP 파일 헤더가 없음.");
+    const fhd = cfb.readStream(fh);
+    const props = u32(fhd, 36);
+    const compressed = !!(props & 1);
+    if (props & 2) throw new Error("암호가 걸린 HWP 파일은 읽을 수 없음. 암호를 풀고 다시 저장해야 함.");
+    if (props & 4) throw new Error("배포용 문서는 읽을 수 없음. 일반 문서로 저장해야 함.");
+    const names = Object.keys(cfb.paths).filter((p) => /^BodyText\/Section\d+$/.test(p))
+      .sort((a, b) => +a.match(/\d+$/)[0] - +b.match(/\d+$/)[0]);
+    if (!names.length) throw new Error("본문을 찾지 못했음.");
+    const info = { pages: [], paras: [] };
+    try {
+      let di = cfb.readStream(cfb.paths["DocInfo"]);
+      if (compressed) di = await inflateRaw(di);
+      Object.assign(info, parseDocInfo(di));
+    } catch (e) { info.docInfoError = String(e && e.message || e); }
+    for (const n of names) {
+      let d = cfb.readStream(cfb.paths[n]);
+      if (compressed) d = await inflateRaw(d);
+      info.paras.push(...parseSection(d, info));
+    }
+    const text = linesFromParas(info.paras);
+    return { text, info: normalizeInfo(info, "hwp") };
+  }
+
+  // 공통 형태로 바꾸기: paras[{line, level, text, align, lsType, ls, indent, marginLeft, runs:[{face,size,bold,italic,underline,strike,outline,shadow,emboss,engrave,sup,sub,ratio}], ctrls:[]}]
+  function normalizeInfo(info, kind) {
+    const out = { kind, pages: info.pages, paras: [] };
+    for (const p of info.paras) {
+      const ps = (info.paraShapes || [])[p.paraShape] || null;
+      const runs = [];
+      const cs = p.charShapes.length ? p.charShapes : [];
+      for (let k = 0; k < cs.length; k++) {
+        const c = (info.charShapes || [])[cs[k].id];
+        if (!c) continue;
+        // 이 글자 모양이 덮는 글자에 실제 글자가 있는지(대략): 문단에 글자가 있으면 사용으로 봄
+        const f = c.flags;
+        const ul = (f >>> 2) & 3;
+        runs.push({
+          face: (info.koFaces || [])[c.faceKo] || "", size: c.size / 100, ratio: c.ratioKo, spacing: c.spacingKo, relSize: c.relSizeKo,
+          italic: !!(f & 1), bold: !!(f & 2), underline: ul === 1 || ul === 3, strike: ul === 2 || !!((f >>> 18) & 7),
+          outline: !!((f >>> 8) & 7), shadow: !!((f >>> 11) & 3), emboss: !!(f & (1 << 13)), engrave: !!(f & (1 << 14)),
+          sup: !!(f & (1 << 15)), sub: !!(f & (1 << 16)),
+        });
+      }
+      out.paras.push({
+        line: p.line, level: p.level, text: p.text, ctrls: p.ctrls,
+        align: ps ? ["JUSTIFY", "LEFT", "RIGHT", "CENTER", "DISTRIBUTE", "DISTRIBUTE_SPACE"][ps.align] || "?" : null,
+        lsType: ps ? ["PERCENT", "FIXED", "BETWEEN_LINES", "AT_LEAST"][ps.lsType] || "?" : null,
+        ls: ps ? ps.ls : null, indent: ps ? ps.indent : 0, marginLeft: ps ? ps.marginLeft : 0, runs,
+      });
+    }
+    return out;
+  }
+
+  async function hwpToText(buf, inflateRaw) { return (await hwpAnalyze(buf, inflateRaw)).text; }
+
+  // ---------- HWPX ----------
+  async function unzip(buf, inflateRaw) {
+    // Find end of central directory
+    let eocd = -1;
+    for (let i = buf.length - 22; i >= Math.max(0, buf.length - 70000); i--) {
+      if (u32(buf, i) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error("HWPX(zip) 형식이 아님.");
+    const n = u16(buf, eocd + 10);
+    let p = u32(buf, eocd + 16);
+    const files = {};
+    const dec = new TextDecoder("utf-8");
+    for (let k = 0; k < n; k++) {
+      if (u32(buf, p) !== 0x02014b50) break;
+      const method = u16(buf, p + 10);
+      const csize = u32(buf, p + 20);
+      const nlen = u16(buf, p + 28), xlen = u16(buf, p + 30), clen = u16(buf, p + 32);
+      const lho = u32(buf, p + 42);
+      const name = dec.decode(buf.subarray(p + 46, p + 46 + nlen));
+      p += 46 + nlen + xlen + clen;
+      files[name] = async () => {
+        const lnlen = u16(buf, lho + 26), lxlen = u16(buf, lho + 28);
+        const st = lho + 30 + lnlen + lxlen;
+        const raw = buf.subarray(st, st + csize);
+        if (method === 0) return raw;
+        if (method === 8) return inflateRaw(raw);
+        throw new Error("지원하지 않는 압축 방식임.");
+      };
+    }
+    return files;
+  }
+
+  const decodeEnt = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'").replace(/&#(\d+);/g, (_, d) => String.fromCharCode(+d))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16))).replace(/&amp;/g, "&");
+  const attr = (tag, name) => { const m = tag.match(new RegExp("\\b" + name + "=\"([^\"]*)\"")); return m ? m[1] : null; };
+
+  const HWPX_CTRL = { tbl: "tbl ", pic: "gso ", line: "gso ", rect: "gso ", ellipse: "gso ", arc: "gso ", polygon: "gso ", curve: "gso ", container: "gso ", textart: "gso ", ole: "gso ", equation: "eqed", header: "head", footer: "foot" };
+
+  function hwpxSection(xml, info) {
+    const out = [];
+    const re = /<(\/?)hp:(p|run|t|tab|lineBreak|nbSpace|fwSpace|tbl|pic|line|rect|ellipse|arc|polygon|curve|container|textart|ole|equation|header|footer|pagePr)\b([^>]*?)(\/?)>|([^<]+)|<[^>]*>/g;
+    let m, inT = 0, cur = null;
+    const stack = [];
+    while ((m = re.exec(xml))) {
+      if (m[2]) {
+        const close = m[1] === "/", selfClose = m[4] === "/", tag = m[2], at = m[3] || "";
+        if (tag === "p") {
+          if (!close) {
+            cur = { level: stack.length, text: "", paraPr: +(attr(at, "paraPrIDRef") || 0), runs: [], ctrls: [] };
+            stack.push(cur); out.push(cur);
+            if (selfClose) { stack.pop(); cur = stack[stack.length - 1] || null; }
+          } else { stack.pop(); cur = stack[stack.length - 1] || null; }
+        } else if (tag === "run") {
+          if (!close && cur) { const r = +(attr(at, "charPrIDRef") || 0); if (!cur.runs.includes(r)) cur.runs.push(r); }
+        } else if (tag === "t") {
+          if (!close && !selfClose) inT++; else if (close) inT = Math.max(0, inT - 1);
+        } else if (tag === "pagePr") {
+          if (!close && info) info.pages.push({ w: +(attr(at, "width") || 0), h: +(attr(at, "height") || 0), landscape: false });
+        } else if (HWPX_CTRL[tag]) {
+          if (!close && cur) cur.ctrls.push(HWPX_CTRL[tag]);
+        } else if (cur && inT && !close) {
+          if (tag === "tab") cur.text += "\t";
+          else if (tag === "lineBreak") cur.text += "\n";
+          else cur.text += " ";
+        }
+      } else if (m[5] != null && inT && cur) cur.text += decodeEnt(m[5]);
+    }
+    return out;
+  }
+  function hwpxSectionText(xml) { return hwpxSection(xml, null).map((p) => p.text); }
+
+  function hwpxHeader(xml) {
+    const koFaces = {};
+    const ff = xml.match(/<hh:fontface\b[^>]*lang="HANGUL"[^>]*>([\s\S]*?)<\/hh:fontface>/);
+    if (ff) for (const m of ff[1].matchAll(/<hh:font\b([^>]*)>/g)) koFaces[attr(m[1], "id")] = decodeEnt(attr(m[1], "face") || "");
+    const charPr = {};
+    for (const m of xml.matchAll(/<hh:charPr\b([^>]*?)(\/>|>([\s\S]*?)<\/hh:charPr>)/g)) {
+      const at = m[1], body = m[3] || "";
+      const fr = body.match(/<hh:fontRef\b([^>]*)>/), ra = body.match(/<hh:ratio\b([^>]*)>/), rs = body.match(/<hh:relSz\b([^>]*)>/);
+      const ul = body.match(/<hh:underline\b([^>]*)>/), so = body.match(/<hh:strikeout\b([^>]*)>/), ol = body.match(/<hh:outline\b([^>]*)>/), sh = body.match(/<hh:shadow\b([^>]*)>/);
+      charPr[attr(at, "id")] = {
+        face: fr ? koFaces[attr(fr[1], "hangul")] || "" : "", size: +(attr(at, "height") || 1000) / 100,
+        ratio: ra ? +(attr(ra[1], "hangul") || 100) : 100, relSize: rs ? +(attr(rs[1], "hangul") || 100) : 100,
+        bold: /<hh:bold\b/.test(body), italic: /<hh:italic\b/.test(body),
+        underline: !!ul && !/type="NONE"/.test(ul[1]), strike: !!so && !/shape="NONE"/.test(so[1]) && !/shape="3D"/.test(so[1]),
+        outline: !!ol && !/type="NONE"/.test(ol[1]), shadow: !!sh && !/type="NONE"/.test(sh[1]),
+        emboss: /<hh:emboss\b/.test(body), engrave: /<hh:engrave\b/.test(body), sup: /<hh:supscript\b/.test(body), sub: /<hh:subscript\b/.test(body),
+      };
+    }
+    const paraPr = {};
+    for (const m of xml.matchAll(/<hh:paraPr\b([^>]*?)>([\s\S]*?)<\/hh:paraPr>/g)) {
+      const body = m[2];
+      const al = body.match(/<hh:align\b([^>]*)>/), ls = body.match(/<hh:lineSpacing\b([^>]*)>/);
+      const ind = body.match(/<hc:intent\b([^>]*)>/), left = body.match(/<hc:left\b([^>]*)>/);
+      paraPr[attr(m[1], "id")] = {
+        align: al ? attr(al[1], "horizontal") : null,
+        lsType: ls ? attr(ls[1], "type") : null, ls: ls ? +attr(ls[1], "value") : null,
+        indent: ind ? +(attr(ind[1], "value") || 0) : 0, marginLeft: left ? +(attr(left[1], "value") || 0) : 0,
+      };
+    }
+    return { charPr, paraPr };
+  }
+
+  async function hwpxAnalyze(buf, inflateRaw) {
+    const files = await unzip(buf, inflateRaw);
+    const secs = Object.keys(files).filter((n) => /^Contents\/section\d+\.xml$/i.test(n))
+      .sort((a, b) => +a.match(/(\d+)\.xml$/i)[1] - +b.match(/(\d+)\.xml$/i)[1]);
+    if (!secs.length) throw new Error("HWPX 본문을 찾지 못했음.");
+    const dec = new TextDecoder("utf-8");
+    let head = { charPr: {}, paraPr: {} };
+    const hn = Object.keys(files).find((n) => /^Contents\/header\.xml$/i.test(n));
+    if (hn) { try { head = hwpxHeader(dec.decode(await files[hn]())); } catch (e) {} }
+    const info = { kind: "hwpx", pages: [], paras: [] };
+    const raw = [];
+    for (const s of secs) raw.push(...hwpxSection(dec.decode(await files[s]()), info));
+    const text = linesFromParas(raw);
+    for (const p of raw) {
+      const pp = head.paraPr[p.paraPr] || {};
+      info.paras.push({
+        line: p.line, level: p.level, text: p.text, ctrls: p.ctrls,
+        align: pp.align || null, lsType: pp.lsType || null, ls: pp.ls ?? null, indent: pp.indent || 0, marginLeft: pp.marginLeft || 0,
+        runs: p.runs.map((r) => head.charPr[r]).filter(Boolean),
+      });
+    }
+    return { text, info };
+  }
+  async function hwpxToText(buf, inflateRaw) { return (await hwpxAnalyze(buf, inflateRaw)).text; }
+
+  // ---------- 서식 검사 (지침 II-1 기본 입력규칙) ----------
+  function formatIssues(info, opts) {
+    opts = Object.assign({ font: "휴먼명조", size: 10, ls: 160 }, opts || {});
+    const groups = new Map();
+    const add = (key, msg, line) => {
+      if (!groups.has(key)) groups.set(key, { msg, lines: [] });
+      const g = groups.get(key);
+      if (line != null && !g.lines.includes(line)) g.lines.push(line);
+    };
+    for (const pg of info.pages) {
+      const w = Math.min(pg.w, pg.h), h = Math.max(pg.w, pg.h);
+      if (Math.abs(w - 59528) > 300 || Math.abs(h - 84188) > 300) add("paper", `용지가 A4가 아님(${(pg.w / 7200 * 25.4).toFixed(0)}×${(pg.h / 7200 * 25.4).toFixed(0)}mm). 편집 용지를 A4로 바꿈.`);
+      else if (pg.landscape || pg.w > pg.h) add("paper", "용지가 가로 방향임. 세로로 바꿈.");
+    }
+    const normFont = (f) => f.replace(/\s+/g, "");
+    const want = normFont(opts.font || "");
+    const ALIGN = { JUSTIFY: "양쪽 정렬", RIGHT: "오른쪽 정렬", CENTER: "가운데 정렬", DISTRIBUTE: "배분 정렬", DISTRIBUTE_SPACE: "나눔 정렬" };
+    for (const p of info.paras) {
+      const hasText = p.text.replace(/\s/g, "").length > 0;
+      const ln = p.line;
+      if (hasText) {
+        if (p.align && p.align !== "LEFT") add("align:" + p.align, `${ALIGN[p.align] || p.align}인 문단이 있음. 문단 모양에서 왼쪽 정렬로 바꿈.`, ln);
+        if (p.lsType && p.lsType !== "PERCENT") add("lstype", `줄 간격 종류가 '글자에 따라'가 아닌 문단이 있음. 글자에 따라 ${opts.ls}%로 맞춤.`, ln);
+        else if (p.ls != null && p.ls !== opts.ls) add("ls:" + p.ls, `줄 간격이 ${p.ls}%인 문단이 있음. ${opts.ls}%로 맞춤.`, ln);
+        if (p.indent) add("pindent", "문단 모양으로 들여쓰기·내어쓰기를 준 문단이 있음. 문단 모양은 0으로 두고 스페이스로 들여씀.", ln);
+        if (p.marginLeft) add("pmargin", "문단 왼쪽 여백을 준 문단이 있음. 문단 모양에서 여백을 0으로 둠.", ln);
+        for (const r of p.runs) {
+          if (want && r.face && !normFont(r.face).includes(want)) add("font:" + r.face, `글꼴이 ${opts.font}가 아닌 곳이 있음(${r.face}).`, ln);
+          if (r.size && Math.abs(r.size - opts.size) > 0.05) add("size:" + r.size, `글자 크기가 ${r.size}pt인 곳이 있음. ${opts.size}pt로 맞춤.`, ln);
+          if (r.relSize && r.relSize !== 100) add("rel", "글자 상대 크기를 바꾼 곳이 있음. 100%로 둠.", ln);
+          if (r.ratio && r.ratio !== 100) add("ratio", "장평을 바꾼 곳이 있음. 100%로 둠.", ln);
+          if (r.bold) add("bold", "진하게 쓴 글자가 있음. 시각 효과는 쓰지 않음.", ln);
+          if (r.italic) add("italic", "기울인 글자가 있음. 시각 효과는 쓰지 않음.", ln);
+          if (r.underline) add("ul", "밑줄 친 글자가 있음. 시각 효과는 쓰지 않음.", ln);
+          if (r.strike) add("strike", "취소선이 있는 글자가 있음.", ln);
+          if (r.outline || r.shadow || r.emboss || r.engrave) add("fx", "외곽선·그림자·양각·음각 같은 글자 효과가 있음.", ln);
+          if (r.sup || r.sub) add("supsub", "위첨자나 아래첨자를 쓴 곳이 있음. 각주는 ( )로 표시함.", ln);
+        }
+      }
+      for (const c of p.ctrls) {
+        if (c === "tbl ") add("tbl", "표가 그대로 들어 있음. 표는 그리지 말고 풀어서 설명함.", ln);
+        else if (c === "gso ") add("gso", "그림·선·글상자 같은 개체가 들어 있음. 지우고 글로 설명하거나 '그림 생략'으로 적음.", ln);
+        else if (c === "eqed") add("eq", "수식 개체가 있음. 수식은 글자로 입력함(1 + 2 = 3).", ln);
+        else if (c === "head" || c === "foot") add("hf", "머리말이나 꼬리말이 있음. 필요 없으면 지움.", ln);
+      }
+    }
+    return [...groups.values()];
+  }
+
+  const api = { hwpToText, hwpxToText, hwpxSectionText, hwpAnalyze, hwpxAnalyze, formatIssues };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.HwpRead = api;
+})(typeof window !== "undefined" ? window : globalThis);
+
+</script>
+<script>
+// 워드봉사 입력 규칙 + 맞춤법 검사 엔진. 브라우저/Node 공용.
+(function (root) {
+  "use strict";
+
+  const DEFAULTS = {
+    indents: "2,4",          // 문단 2칸, 제목·소제목·목차 4칸 (2026 워드 봉사 지침)
+    allowed: "! # $ % & ( ) * + , - . / : ; < = > ? @ [ \\ ] ^ _ ` { | } ~ “ ” ‘ ’", // 키보드 기호 + 둥근 따옴표
+    blankMax: 3,             // 연속 빈 줄 최대 개수. 0=빈 줄 금지, -1=검사 안 함
+    pageFormat: "off",       // off | dash(-12-) | angle(<12>) | bracket([12]) | jjok(12쪽) | custom
+    pageCustom: "",
+    hanja: true,
+    midBreak: true,          // 문단 중간 줄바꿈 의심
+    titleMarker: false,      // @[ 제목 @] 짝 검사
+    math: true,              // 날짜·사칙연산·분수 표기
+    structure: true,         // 각주 끝, 표 끝, 차례 쪽수, 판권사항
+    bookInfo: true,          // 앞부분 도서 정보 확인
+    picRef: true,            // '위의 그림', '오른쪽 표' 같은 위치 표현
+    spell: true,             // 자주 틀리는 맞춤법
+    spacing: true,           // 자주 틀리는 띄어쓰기
+    typo: true,              // 오타 의심(자모 단독, 반복 단어)
+  };
+
+  const CAT = { rule: "입력 규칙", spell: "맞춤법", space: "띄어쓰기", typo: "오타 의심", info: "확인" };
+
+  // ---------- Hangul helpers ----------
+  const SBASE = 0xAC00;
+  function jong(ch) { const c = ch.charCodeAt(0) - SBASE; return c >= 0 && c < 11172 ? c % 28 : -1; }
+  function classWithJong(j) {
+    let s = "";
+    for (let c = SBASE + j; c < SBASE + 11172; c += 28) s += String.fromCharCode(c);
+    return "[" + s + "]";
+  }
+  const RIEUL = classWithJong(8);   // ㄹ받침 음절
+  const NIEUN = classWithJong(4);   // ㄴ받침 음절
+  const H = "[가-힣]";
+  const NH = "(?<![가-힣])";        // 앞에 한글 없음
+  const NA = "(?![가-힣])";         // 뒤에 한글 없음
+
+  // ---------- 기호 대체표 ----------
+  // [문자들, 대체(자동 수정 가능하면 문자열), 설명]
+  const SYMBOLS = [
+    ["「『《«", "“", "「」『』《》는 괄호로 쓸 수 없음. 큰따옴표로 바꾸거나, 빼도 되면 뺌(「열하일기」 → 열하일기)."],
+    ["」』》»", "”", "「」『』《》는 괄호로 쓸 수 없음. 큰따옴표로 바꾸거나, 빼도 되면 뺌."],
+    ["〈【〔‹", "‘", "〈〉【】〔〕는 괄호로 쓸 수 없음. 작은따옴표로 바꾸거나, 빼도 되면 뺌."],
+    ["〉】〕›", "’", "〈〉【】〔〕는 괄호로 쓸 수 없음. 작은따옴표로 바꾸거나, 빼도 되면 뺌."],
+    ["…⋯", "...", "말줄임표는 마침표 세 개(...)로 입력함."],
+    ["→⇒➔➜", " -> ", "화살표는 -> 로, 앞뒤를 한 칸씩 띄워 입력함(서울 -> 부산)."],
+    ["←⇐", " <- ", "화살표는 키보드로 <- 처럼 입력함."],
+    ["※", "* ", "※는 *로 바꾸고 한 칸 띄운 뒤 글을 씀."],
+    ["★☆●○■□◆◇▲△▼▽▶▷◀◁♠♣♥♡♧◎◈▣◐◑☞☜✓✔❖♦", "*", "키보드에 없는 그림 기호임. *로 바꾸거나 도서관에 확인 필요."],
+    ["·∙•ㆍ", "", "가운뎃점은 빼고 붙여 씀(초·중·고등학교 → 초중고등학교)."],
+    ["∼〜～", "~", "물결표는 키보드의 ~로, 앞뒤를 붙여 입력함(30:11~30:13)."],
+    ["―—–", "-", "긴 줄표는 키보드의 - 로 입력함."],
+    ["×", "*", "곱셈은 * 로 쓰고 앞뒤를 띄움(5 * 4 = 20)."],
+    ["÷", "/", "나눗셈은 / 로 입력함."],
+    ["°℃℉", null, "도 기호는 문자표로 넣어도 되지만, '도'처럼 글자로 풀면 더 확실함."],
+    ["㈜", "(주)", "㈜는 (주)로 풀어 씀."],
+    ["№", "No.", "№는 No.로 풀어 씀."],
+    ["¹²³⁴⁵⁶⁷⁸⁹⁰", null, "위첨자는 쓰지 않음. 각주는 발달(1)처럼 ( )로 표시함."],
+    ["。", ".", "마침표(.)로 바꿈."],
+    ["、", ",", "쉼표(,)로 바꿈."],
+  ];
+  const STRICT_SYMBOLS = "「『《«」』》»〈【〔‹〉】〕›…⋯→⇒➔➜←⇐※·∙•ㆍ∼〜～―—–×÷。、¹²³⁴⁵⁶⁷⁸⁹⁰";
+  const SYMMAP = new Map();
+  for (const [chars, rep, msg] of SYMBOLS) for (const ch of chars) SYMMAP.set(ch, { rep, msg });
+  const CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+  const PAREN_NUM = "⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽";
+  const CIRCLED_KO = "㉠㉡㉢㉣㉤㉥㉦㉧㉨㉩㉪㉫㉬㉭㉮㉯㉰㉱㉲㉳㉴㉵㉶㉷㉸㉹㉺㉻";
+  const KO_JAMO_ORDER = "ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ가나다라마바사아자차카타파하";
+
+  // ---------- 맞춤법 목록 ----------
+  // [정규식 원문, 대체(문자열 또는 함수), 설명, 분류]
+  const SPELL = [
+    ["몇일", "며칠", "'며칠'이 맞음."],
+    ["금새", "금세", "'금시에'의 준말이라 '금세'임."],
+    ["어떻해", "어떡해", "'어떻게 해'의 준말은 '어떡해'임."],
+    ["어떻하", "어떡하", "'어떻게 하'의 준말은 '어떡하'임."],
+    ["웬지", "왠지", "'왜인지'의 준말이라 '왠지'임."],
+    ["왠일", "웬일", "'웬일'이 맞음."],
+    ["왠만", "웬만", "'웬만하다'가 맞음."],
+    ["왠걸", "웬걸", "'웬걸'이 맞음."],
+    ["(?<![가-힣])왠 (?=[가-힣])", "웬 ", "'어찌 된, 어떠한'의 뜻이면 '웬'임."],
+    ["되요(?![가-힣])", "돼요", "'되어요'의 준말이라 '돼요'임."],
+    ["되서(?![가-힣])", "돼서", "'되어서'의 준말이라 '돼서'임."],
+    ["됬", "됐", "'되었'의 준말이라 '됐'임."],
+    ["뵈요", "봬요", "'뵈어요'의 준말이라 '봬요'임."],
+    ["뵜", "뵀", "'뵈었'의 준말이라 '뵀'임."],
+    ["(" + RIEUL + ")께(?=요|[\\s.,!?\"']|$)", "$1게", "'-ㄹ게'가 맞음(예: 할게)."],
+    ["(" + RIEUL + ")껄(?=요|[\\s.,!?\"']|$)", "$1걸", "'-ㄹ걸'이 맞음(예: 할걸)."],
+    ["(" + RIEUL + ")꺼(?=야|예요|에요|다|면|라|니|든|지|고)", "$1 거", "'것'의 구어형은 '거'이고 앞말과 띄어 씀(예: 할 거야)."],
+    ["일일히", "일일이", "'일일이'가 맞음."],
+    ["깨끗히", "깨끗이", "'깨끗이'가 맞음."],
+    ["곰곰히", "곰곰이", "'곰곰이'가 맞음."],
+    ["틈틈히", "틈틈이", "'틈틈이'가 맞음."],
+    ["번번히", "번번이", "'번번이'가 맞음."],
+    ["가까히", "가까이", "'가까이'가 맞음."],
+    ["솔직이", "솔직히", "'솔직히'가 맞음."],
+    ["꼼꼼이", "꼼꼼히", "'꼼꼼히'가 맞음."],
+    ["오랫만", "오랜만", "'오래간만'의 준말이라 '오랜만'임."],
+    ["설겆이", "설거지", "'설거지'가 맞음."],
+    ["희안", "희한", "'희한하다'가 맞음."],
+    ["어의(?=없|가 없)", "어이", "'어이없다'가 맞음."],
+    ["역활", "역할", "'역할'이 맞음."],
+    ["육계장", "육개장", "'육개장'이 맞음."],
+    ["무릎쓰", "무릅쓰", "'무릅쓰다'가 맞음."],
+    ["눈쌀", "눈살", "'눈살'이 맞음."],
+    ["(?<![가-힣])구지(?![가-힣])", "굳이", "'굳이'가 맞음(지명이면 그대로 둠)."],
+    ["궂이", "굳이", "'굳이'가 맞음."],
+    ["도데체", "도대체", "'도대체'가 맞음."],
+    ["설레임", "설렘", "'설렘'이 맞음."],
+    ["있슴", "있음", "'있음'이 맞음."],
+    ["없슴", "없음", "'없음'이 맞음."],
+    ["할려고", "하려고", "'-려고'가 맞음(하려고)."],
+    ["갈려고", "가려고", "'-려고'가 맞음(가려고)."],
+    ["볼려고", "보려고", "'-려고'가 맞음(보려고)."],
+    ["줄려고", "주려고", "'-려고'가 맞음(주려고)."],
+    ["할려면", "하려면", "'-려면'이 맞음(하려면)."],
+    ["않(?=[하돼되가와봐보먹])", "안 ", "부정의 '안'(아니)은 '안'으로 쓰고 띄어 씀."],
+    ["어짜피", "어차피", "'어차피'가 맞음."],
+    ["희노애락", "희로애락", "'희로애락'이 맞음."],
+    ["(?<![가-힣])일부로(?![서써])", "일부러", "'일부러'가 맞음."],
+    ["넓다랗", "널따랗", "'널따랗다'가 맞음."],
+    ["짜집기", "짜깁기", "'짜깁기'가 맞음."],
+    ["추스리", "추스르", "'추스르다'가 맞음."],
+    ["귀뜸", "귀띔", "'귀띔'이 맞음."],
+    ["내노라", "내로라", "'내로라하다'가 맞음."],
+    ["삼가하", "삼가", "'삼가다'가 기본형이라 '삼가'임(삼가 주세요)."],
+    ["건내", "건네", "'건네다'가 맞음."],
+    ["닥달", "닦달", "'닦달'이 맞음."],
+    ["통채로", "통째로", "'통째로'가 맞음."],
+    ["뒤치닥거리", "뒤치다꺼리", "'뒤치다꺼리'가 맞음."],
+    ["개구장이", "개구쟁이", "'개구쟁이'가 맞음."],
+    ["멋장이", "멋쟁이", "'멋쟁이'가 맞음."],
+    ["아뭏든", "아무튼", "'아무튼'이 맞음."],
+    ["어쨋든", "어쨌든", "'어쨌든'이 맞음."],
+    ["그리고 ?나서", "그러고 나서", "'그리하고 나서'의 뜻이면 '그러고 나서'임."],
+    ["문안하게", "무난하게", "'무난하다'가 맞음."],
+    ["바램(?=이|을|은|대로)", "바람", "'소망'의 뜻이면 '바람'임."],
+    ["안됬", "안됐", "'됐'이 맞음."],
+    ["몇 일(?=[이을은동간째에])", "며칠", "날수를 뜻하면 '며칠'임."],
+    ["애띤", "앳된", "'앳되다'가 맞음."],
+    ["오두방정", "오도방정", "'오도방정'이 맞음."],
+    ["으례", "으레", "'으레'가 맞음."],
+    ["게시판에 게제", "게시판에 게재", "'게재'가 맞음."],
+    ["게제", "게재", "'게재'가 맞음."],
+    ["얽히고 설킨", "얽히고설킨", "'얽히고설키다'는 한 단어임."],
+    ["치뤘", "치렀", "'치르다'의 과거형은 '치렀'임."],
+    ["잠궈", "잠가", "'잠그다'의 활용형은 '잠가'임."],
+    ["잠궜", "잠갔", "'잠그다'의 과거형은 '잠갔'임."],
+    ["담궈", "담가", "'담그다'의 활용형은 '담가'임."],
+    ["담궜", "담갔", "'담그다'의 과거형은 '담갔'임."],
+    ["설레였", "설렜", "'설레다'의 과거형은 '설렜'임."],
+    ["헤매였", "헤맸", "'헤매다'의 과거형은 '헤맸'임."],
+    ["바꼈", "바뀌었", "'바뀌었'이 맞음."],
+    ["사겼", "사귀었", "'사귀었'이 맞음."],
+    ["(" + RIEUL + ")런지", "$1는지", "'-ㄹ는지'가 맞음."],
+    ["며칠날", "며칟날", "'며칟날'이 맞음."],
+  ].filter((r) => r[2]).map(([p, rep, msg]) => ({ re: new RegExp(p, "g"), rep, msg, cat: "spell" }));
+
+  const SPACING = [
+    ["(" + RIEUL + ") ?수(있|없)", "$1 수 $2", "'수'는 의존 명사라 띄어 씀(할 수 있다)."],
+    ["(" + RIEUL + ")수 (있|없)", "$1 수 $2", "'수'는 의존 명사라 띄어 씀(할 수 있다)."],
+    ["(" + H + ")것같", "$1 것 같", "'것'과 '같다'는 띄어 씀(그런 것 같다)."],
+    ["(" + NIEUN + ")것(?=[이은을도만]|[\\s.,!?]|$)", "$1 것", "'것'은 의존 명사라 띄어 씀(먹은 것)."],
+    ["(?![날별들])(" + RIEUL + ")것(?=[이은을도만]|[\\s.,!?]|$)", "$1 것", "'것'은 의존 명사라 띄어 씀(할 것)."],
+    ["(" + RIEUL + ")때(?=[\\s.,!?]|에|는|도|부터|까지|마다|$)", "$1 때", "'때'는 앞말과 띄어 씀(할 때)."],
+    ["(" + RIEUL + ")거(?=야|예요|에요|라고|란|래|지만)", "$1 거", "'거'는 의존 명사라 띄어 씀(할 거야)."],
+    ["(" + RIEUL + ")뻔(?=했|하)", "$1 뻔", "'뻔'은 의존 명사라 띄어 씀(넘어질 뻔했다)."],
+    ["(" + RIEUL + ")줄(?= ?[알몰])", "$1 줄", "'줄'은 의존 명사라 띄어 씀(할 줄 안다)."],
+    ["(" + H + ")지(않|못하)", "$1지 $2", "'-지 않다', '-지 못하다'는 띄어 씀."],
+  ].map(([p, rep, msg]) => ({ re: new RegExp(p, "g"), rep, msg, cat: "space" }));
+
+  // ---------- 쪽 번호 ----------
+  function pageRegex(s) {
+    switch (s.pageFormat) {
+      case "dash": return /^\s*-\s?(\d{1,4})\s?-\s*$/;
+      case "angle": return /^\s*<\s?(\d{1,4})\s?>\s*$/;
+      case "bracket": return /^\s*\[\s?(\d{1,4})\s?\]\s*$/;
+      case "jjok": return /^\s*(\d{1,4})\s?쪽\s*$/;
+      case "custom":
+        try { return s.pageCustom ? new RegExp(s.pageCustom) : null; } catch (e) { return null; }
+      default: return null;
+    }
+  }
+  const PAGE_LIKE = /^\s*[-<\[(#]?\s?\(?\s?(\d{1,4})\s?\)?\s?[->\])쪽p.]?\s*(쪽|페이지|p)?\s*$/i;
+
+  function splitLines(text) {
+    return text.replace(/\r\n?/g, "\n").split("\n");
+  }
+
+  function check(text, userSettings) {
+    const s = Object.assign({}, DEFAULTS, userSettings || {});
+    const lines = splitLines(text);
+    const issues = [];
+    const seen = new Set();
+    const add = (line, start, end, cat, msg, fix, extra) => {
+      const key = line + ":" + start + ":" + end + ":" + cat;
+      if (cat !== "rule" && seen.has(key)) return;
+      seen.add(key);
+      issues.push(Object.assign({ line, start, end, cat, msg, fix: fix === undefined ? null : fix }, extra || {}));
+    };
+
+    const indents = String(s.indents || "").split(/[,\s]+/).filter(Boolean).map(Number).filter((n) => n >= 0 && n < 20);
+    const allowedSet = new Set(String(s.allowed || "").split(/\s+/).join("").split(""));
+    const pageRe = pageRegex(s);
+    const pages = [];
+    const isBlank = (l) => l.trim() === "";
+    const ENDERS = /[.?!"'”’)\]」』:…~]$/;
+
+    let blankRun = 0, skipIndent = false;
+    for (let i = 0; i < lines.length; i++) {
+      const L = lines[i];
+      const ln = i + 1;
+
+      // 빈 줄
+      if (isBlank(L)) {
+        blankRun++;
+        if (L.length > 0) add(ln, 0, L.length, "rule", "공백만 있는 줄임.", "", { kind: "blankspace" });
+        const bm = Number(s.blankMax);
+        if (bm >= 0 && blankRun > bm) add(ln, 0, L.length, "rule",
+          bm === 0 ? "빈 줄은 넣지 않음." : `빈 줄이 ${bm}줄 넘게 이어짐. 보통 1줄, 큰 단원이 바뀔 때 2줄(많아야 ${bm}줄)만 비움.`,
+          null, { kind: "blank", delLine: true, quiet: blankRun > bm + 1 });
+        skipIndent = false;
+        continue;
+      }
+      blankRun = 0;
+
+      // 쪽 번호
+      let pm = pageRe ? L.match(pageRe) : null;
+      if (pm) { pages.push({ ln, n: parseInt(pm[1], 10) }); continue; }
+      if (pageRe && PAGE_LIKE.test(L) && L.trim().length <= 10) {
+        add(ln, 0, L.length, "rule", "쪽 번호처럼 보이는데 정한 형식과 다름.", null, { kind: "pageform" });
+        continue;
+      }
+
+      const isLabel = /^\s*[가-힣A-Za-z ]{1,8}\s?[:：]/.test(L) && i < 40;
+      // 탭
+      const indentChoices = (indents.length ? indents : [2, 4]).filter((k) => k > 0).map((k) => ({ label: `${k}칸으로`, fix: " ".repeat(k) }));
+      const indentHint = indents.includes(2) && indents.includes(4) ? "문단은 2칸, 제목·소제목·목차는 4칸." : `${indents.join(", ")}칸 중 하나로 맞춤.`;
+      for (const m of L.matchAll(/\t+/g)) {
+        const leadWs = L.match(/^[ \t]*/)[0];
+        if (m.index < leadWs.length) {
+          if (m.index > 0 && /\t/.test(leadWs.slice(0, m.index))) continue;
+          add(ln, 0, leadWs.length, "rule", "탭으로 들여쓰지 말고 스페이스로 들여씀. " + indentHint, null, { kind: "tab", choices: indentChoices, fixStart: 0, fixEnd: leadWs.length });
+        } else add(ln, m.index, m.index + m[0].length, "rule", "문장 중간에 탭이 있음.", " ", { kind: "tab" });
+      }
+
+      // 들여쓰기
+      const lead = L.match(/^[ 　 ]*/)[0];
+      const hasTabLead = /^[ ]*\t/.test(L);
+      const wasSkip = skipIndent; skipIndent = false;
+      if (indents.length && !hasTabLead && !wasSkip) {
+        const n = lead.length;
+        if (!indents.includes(n) && !(s.titleMarker && L.slice(n).startsWith("@["))) {
+          add(ln, 0, Math.max(n, 1), "rule",
+            (n === 0 ? "첫머리 들여쓰기가 없음. " : `첫머리가 ${n}칸 들여쓰기임. `) + indentHint,
+            null, { kind: "indent", choices: indentChoices, fixStart: 0, fixEnd: n });
+        }
+      }
+
+      // 줄 끝 공백
+      const tm = L.match(/[ 　 ]+$/);
+      if (tm) add(ln, tm.index, L.length, "rule", "줄 끝에 공백이 있음.", "", { kind: "trail" });
+
+      // 문장 중간 두 칸 이상 공백
+      const body = L.slice(lead.length);
+      for (const m of body.matchAll(/(?<=\S) {2,}(?=\S)/g)) {
+        const rest = body.slice(m.index + m[0].length);
+        if (m[0].length === 2 && /^\d{1,4}(쪽)?$/.test(rest.trim())) continue; // 차례: 제목vv34
+        add(ln, lead.length + m.index, lead.length + m.index + m[0].length, "rule",
+          "문장 중간에 두 칸 이상 띄웠음. 점자에서는 줄바꿈으로 읽힘.", " ", { kind: "dblspace" });
+      }
+
+      // 보이지 않는 문자 / 전각
+      for (let k = 0; k < L.length; k++) {
+        const ch = L[k], c = ch.charCodeAt(0);
+        if (c === 0x200B || c === 0xFEFF || c === 0x200C || c === 0x200D) add(ln, k, k + 1, "rule", "눈에 안 보이는 문자가 있음.", "", { kind: "invis" });
+        else if (c === 0x00A0 || c === 0x3000) { if (k >= lead.length && k < L.length - (tm ? tm[0].length : 0)) add(ln, k, k + 1, "rule", "특수 공백(전각 공백 등)임. 일반 공백으로 바꿈.", " ", { kind: "nbsp" }); }
+        else if (c >= 0xFF01 && c <= 0xFF5E && c !== 0xFF5E) add(ln, k, k + 1, "rule", "전각 문자임. 반각으로 바꿈.", String.fromCharCode(c - 0xFEE0), { kind: "fullwidth" });
+      }
+
+      // 따옴표: 방향 있는 따옴표로 통일
+      let quoteFlag = false;
+      {
+        let dqOpen = false, sqOpen = false;
+        const OPENERS = /[\s(\[{<“‘\-—–]/;
+        for (let k = 0; k < L.length; k++) {
+          const ch = L[k];
+          if (!"\"'“”‘’".includes(ch)) continue;
+          const prev = k > 0 ? L[k - 1] : "", next = k + 1 < L.length ? L[k + 1] : "";
+          const dbl = ch === '"' || ch === "“" || ch === "”";
+          if (!dbl && /[A-Za-z]/.test(prev) && /[A-Za-z]/.test(next)) {
+            if (ch === "'") add(ln, k, k + 1, "rule", "영어 아포스트로피도 방향 있는 따옴표(’)로 씀.", "’", { kind: "quote" });
+            continue;
+          }
+          let want, byCtx = true;
+          const openCtx = (!prev || OPENERS.test(prev)) && next && !/\s/.test(next);
+          const closeCtx = prev && !/\s/.test(prev) && (!next || /[\s.,!?;:)\]}…~]/.test(next));
+          if (openCtx && !closeCtx) want = "open";
+          else if (closeCtx && !openCtx) want = "close";
+          else { byCtx = false; want = (dbl ? dqOpen : sqOpen) ? "close" : "open"; }
+          if (dbl) dqOpen = want === "open"; else sqOpen = want === "open";
+          const right = dbl ? (want === "open" ? "“" : "”") : (want === "open" ? "‘" : "’");
+          if (ch === '"' || ch === "'") {
+            add(ln, k, k + 1, "rule", `곧은 따옴표(${ch})는 방향 있는 따옴표로 씀. 여기는 ${want === "open" ? "여는" : "닫는"} 따옴표(${right})로 보임.`, right, { kind: "quote" });
+          } else if (ch !== right) {
+            quoteFlag = true;
+            add(ln, k, k + 1, "rule", `따옴표 방향이 반대로 보임. 여기는 ${want === "open" ? "여는" : "닫는"} 따옴표(${right})여야 함.`, right, { kind: "quote", suspect: !byCtx });
+          }
+        }
+      }
+
+      // 기호
+      for (let k = 0; k < L.length; k++) {
+        const ch = L[k];
+        if (ch !== "ㆍ" && /[\p{L}\p{N}\s]/u.test(ch) && !CIRCLED.includes(ch) && !PAREN_NUM.includes(ch) && !CIRCLED_KO.includes(ch) && !/[Ⅰ-ⅿ]/.test(ch) && !"¹²³⁴⁵⁶⁷⁸⁹⁰".includes(ch)) continue;
+        if (allowedSet.has(ch) || ch === '"' || ch === "'") continue;
+        if ((ch === ">" && L[k - 1] === "-") || (ch === "<" && L[k + 1] === "-")) continue;
+        if (s.titleMarker && ((ch === "@" && (L[k + 1] === "[" || L[k + 1] === "]")) || ((ch === "[" || ch === "]") && L[k - 1] === "@"))) continue;
+        const cc = ch.charCodeAt(0);
+        if (cc >= 0xFF01 && cc <= 0xFF5D) continue; // 전각은 위에서 처리
+        let fix = null, msg;
+        const ci = CIRCLED.indexOf(ch), pi = PAREN_NUM.indexOf(ch), ki = CIRCLED_KO.indexOf(ch);
+        if (ci >= 0) { fix = "(" + (ci + 1) + ")"; msg = "원문자는 (1)처럼 괄호 숫자로 바꿈."; }
+        else if (pi >= 0) { fix = "(" + (pi + 1) + ")"; msg = "괄호 숫자 기호는 (1)처럼 풀어 씀."; }
+        else if (ki >= 0) { fix = "(" + KO_JAMO_ORDER[ki] + ")"; msg = "원문자는 (가)처럼 괄호로 풀어 씀."; }
+        if (ci >= 0 || pi >= 0 || ki >= 0) msg += " 항목 순서는 1. 1) (1) 가. 가) (가)임.";
+        else if (/[Ⅰ-ⅿ]/.test(ch)) { msg = "로마 숫자 기호는 영문자(I, II, V…)로 풀어 씀."; }
+        else if (SYMMAP.has(ch)) {
+          const e = SYMMAP.get(ch); fix = e.rep; msg = e.msg;
+          if (fix && allowedSet.size && !/^ ?(->|<-) ?$/.test(fix) && ![...fix.trim()].every((x) => allowedSet.has(x) || /[A-Za-z0-9 ()]/.test(x))) fix = null;
+          if (fix === "* ") fix = L[k + 1] === " " ? "*" : "* ";
+          if (fix === " -> " || fix === " <- ") {
+            // 앞뒤 공백 중복 방지
+            const before = L[k - 1] === " ", after = L[k + 1] === " ";
+            fix = (before ? "" : " ") + fix.trim() + (after ? "" : " ");
+          }
+        } else msg = `'${ch}'는 키보드에 없는 기호임. 꼭 필요하면 문자표(Ctrl+F10)로 넣고, 아니면 풀어 씀.`;
+        const strict = STRICT_SYMBOLS.includes(ch);
+        // 같은 기호가 연달아 있으면 한 번에
+        let e = k + 1;
+        while (e < L.length && L[e] === ch && ci < 0 && pi < 0 && ki < 0) e++;
+        const repl = fix == null ? null : (e - k > 1 && fix.length === 1 ? fix.repeat(e - k) : fix);
+        if (ch === "…" && e - k > 1) { add(ln, k, e, "rule", msg, "...", { kind: "sym" }); k = e - 1; continue; }
+        add(ln, k, e, strict ? "rule" : "info", msg, repl, { kind: "sym", sym: ch });
+        k = e - 1;
+      }
+
+      // 마침표 개수
+      for (const m of L.matchAll(/(?<!\.)\.{2}(?!\.)|\.{4,}/g)) {
+        if (m[0].length === 2 && /\d/.test(L[m.index - 1] || "")) continue;
+        add(ln, m.index, m.index + m[0].length, "rule", "말줄임표는 마침표 세 개(...)로 입력함.", "...", { kind: "dots" });
+      }
+
+      // 한자
+      if (s.hanja) {
+        for (const m of L.matchAll(/(\(\s*)?[㐀-䶿一-鿿豈-﫿]+(\s*\))?/g)) {
+          const paren = m[1] && m[2];
+          const prev = L[m.index - 1] || "";
+          if (paren && /[가-힣A-Za-z]/.test(prev)) {
+            add(ln, m.index, m.index + m[0].length, "rule", "앞 단어와 겹치는 한자 병기임. 지우거나 도서관 규칙대로 뜻을 풀어 씀.", "", { kind: "hanja" });
+          } else {
+            add(ln, m.index, m.index + m[0].length, "rule", "한자는 한글 음으로만 적음(東西南北 → 동서남북). 뜻을 밝혀야 하면 ‘바를 정자’처럼 씀.", null, { kind: "hanja" });
+          }
+        }
+      }
+
+      // 문장부호 앞 공백 / 뒤 띄어쓰기
+      for (const m of L.matchAll(/(?<=[가-힣A-Za-z0-9)"'”’]) +(?=[.,?!;:](?!\.\.))/g)) {
+        if (/\d/.test(L[m.index - 1]) && L[m.index + m[0].length] === ":") continue;
+        if (L.slice(m.index + m[0].length, m.index + m[0].length + 3) === "...") continue;
+        add(ln, m.index, m.index + m[0].length, "rule", "문장부호 앞에는 띄우지 않음.", "", { kind: "prepunct" });
+      }
+      for (const m of L.matchAll(/(?<=[가-힣] ?)[,.?!](?=[가-힣A-Za-z])|(?<=[A-Za-z0-9])[,?!;](?=[가-힣])/g)) {
+        add(ln, m.index, m.index + 1, "rule", "문장부호 뒤에는 한 칸 띄움.", m[0] + " ", { kind: "postpunct" });
+      }
+
+      // 쌍점·쌍반점 뒤 띄우기 (숫자:숫자는 붙임)
+      for (const m of L.matchAll(/(?<=[가-힣A-Za-z)\]"'”’])[:;](?=[^\s\d:;\/])|(?<=[가-힣)])[:;](?=\d)/g)) {
+        add(ln, m.index, m.index + 1, "rule", "쌍점(:)과 쌍반점(;)은 앞말에 붙이고 뒤는 한 칸 띄움(날짜: 2025년). 비율, 시간, 성경 구절(3:3)만 붙여 씀.", m[0] + " ", { kind: "colon" });
+      }
+      for (const m of L.matchAll(/(?<=\d) +: *(?=\d)|(?<=\d): +(?=\d)/g)) {
+        add(ln, m.index, m.index + m[0].length, "rule", "숫자 사이 쌍점(비율, 시간, 성경 구절)은 붙여 씀(3:3).", ":", { kind: "colon" });
+      }
+      // 물결표·빗금은 붙여 쓰기
+      for (const m of L.matchAll(/(?<=\S) +~ *(?=\S)|(?<=\S)~ +(?=\S)/g)) {
+        add(ln, m.index, m.index + m[0].length, "rule", "물결표(~)는 앞뒤를 붙여 씀(30:11~30:13).", "~", { kind: "tilde" });
+      }
+      for (const m of L.matchAll(/(?<=\S) +\/ *(?=\S)|(?<=\S)\/ +(?=\S)/g)) {
+        add(ln, m.index, m.index + m[0].length, "rule", "빗금(/)은 붙여 씀(영수/철수).", "/", { kind: "slash" });
+      }
+      // 말줄임표 앞뒤 붙이기 (원본 우선이라 의심으로)
+      for (const m of L.matchAll(/(?<=[가-힣A-Za-z]) +(?=\.\.\.)|(?<=[^.]\.\.\.) +(?=[가-힣A-Za-z])/g)) {
+        add(ln, m.index, m.index + m[0].length, "rule", "말줄임표는 앞뒤를 붙여 씀(하지만...사랑하려니). 원본 책이 띄어 썼으면 그대로 둠.", "", { kind: "ellipsis", suspect: true });
+      }
+
+      // 숫자·수식
+      if (s.math) {
+        for (const m of L.matchAll(/(?<![\d.])((?:19|20)\d{2})\. ?(\d{1,2})\. ?(\d{1,2})\.?(?!\d)/g)) {
+          add(ln, m.index, m.index + m[0].length, "rule", "날짜는 글자로 풀어 씀(2018. 1. 1. → 2018년 1월 1일).",
+            `${m[1]}년 ${+m[2]}월 ${+m[3]}일`, { kind: "date" });
+        }
+        for (const m of L.matchAll(/(?<=[0-9A-Za-z가-힣)]) *[+=] *(?=[0-9A-Za-z가-힣(])/g)) {
+          if (m[0].startsWith(" ") && m[0].endsWith(" ")) continue;
+          const op = m[0].trim();
+          add(ln, m.index, m.index + m[0].length, "rule", "사칙연산 기호와, 한글·영어를 잇는 기호는 앞뒤를 띄움(1 + 2 = 3, have + 과거분사).", ` ${op} `, { kind: "op" });
+        }
+        for (const m of L.matchAll(/(?<=\d) *\* *(?=\d)/g)) {
+          if (m[0] === " * ") continue;
+          add(ln, m.index, m.index + m[0].length, "rule", "곱셈 기호(*)는 앞뒤를 띄움(5 * 4 = 20).", " * ", { kind: "op" });
+        }
+        for (const m of L.matchAll(/(?<![\d\/.:])(\d{1,3})\/(\d{1,3})(?![\d\/])/g)) {
+          add(ln, m.index, m.index + m[0].length, "typo", "분수라면 읽는 순서대로 분모를 먼저 씀(1/2 → 2/1). 분수가 아니면 그대로 둠.", `${m[2]}/${m[1]}`, { kind: "frac", suspect: true });
+        }
+      }
+
+      // 표 제목: 표 - 13
+      if (s.structure) {
+        const tt = L.match(/^(\s*)표 ?[-–—]? ?(\d+)/);
+        if (tt && !/^\s*표 - \d/.test(L)) add(ln, tt[1].length, tt[0].length, "rule", "표 제목은 '표 - 13'처럼 하이픈 앞뒤를 띄움.", `표 - ${tt[2]}`, { kind: "tabletitle" });
+      }
+
+      // 괄호 짝
+      const Lp = L.replace(/^\s*(\d{1,3}|[가-하])\)/, "");
+      const cnt = (re) => (Lp.match(re) || []).length;
+      const pairs = [["(", ")", /\(/g, /\)/g], ["[", "]", /\[/g, /\]/g]];
+      for (const [o, c, ro, rc] of pairs) {
+        const a = cnt(ro), b = cnt(rc);
+        if (a !== b) {
+          const off = L.length - Lp.length;
+          const at = off + (a > b ? Lp.lastIndexOf(o) : Lp.indexOf(c));
+          add(ln, at, at + 1, "typo", `괄호 짝이 안 맞음('${o}' ${a}개, '${c}' ${b}개).`, null, { kind: "pair" });
+        }
+      }
+      const lq = cnt(/[“]/g) + 0, rq = cnt(/[”]/g), sq = cnt(/"/g);
+      if (!quoteFlag && sq === 0 && lq !== rq) { const at = Math.max(L.lastIndexOf("“"), L.lastIndexOf("”")); add(ln, at, at + 1, "typo", "여는 따옴표와 닫는 따옴표 개수가 다름.", null, { kind: "pair" }); }
+
+      // 제목 표시
+      if (s.titleMarker) {
+        const a = cnt(/@\[/g), b = cnt(/@\]/g);
+        if (a !== b) add(ln, 0, L.length, "rule", `제목 표시 @[ @] 짝이 안 맞음(@[ ${a}개, @] ${b}개).`, null, { kind: "title" });
+      }
+
+      // 그림 위치 표현
+      if (s.picRef) {
+        for (const m of L.matchAll(/(위의?|아래의?|오른쪽의?|왼쪽의?|옆의?) ?(그림|사진|표|도표|그래프|삽화)/g)) {
+          add(ln, m.index, m.index + m[0].length, "rule", "점자책에서는 위치가 달라짐. '앞의', '다음'처럼 바꿈.", null, { kind: "picref" });
+        }
+      }
+
+      // 맞춤법·띄어쓰기
+      const lists = [];
+      if (s.spell) lists.push(...SPELL);
+      if (s.spacing) lists.push(...SPACING);
+      for (const r of lists) {
+        r.re.lastIndex = 0;
+        for (const m of L.matchAll(r.re)) {
+          const rep = r.rep.replace(/\$(\d)/g, (_, d) => m[+d] ?? "");
+          if (rep === m[0]) continue;
+          add(ln, m.index, m.index + m[0].length, r.cat, r.msg, rep, { kind: r.cat, suspect: true });
+        }
+      }
+
+      // 오타 의심
+      if (s.typo) {
+        for (const m of L.matchAll(/[\u3131-\u318C]+/g)) {
+          add(ln, m.index, m.index + m[0].length, "typo", "자음이나 모음만 따로 있음. 오타인지 확인 필요.", null, { kind: "jamo" });
+        }
+        for (const m of L.matchAll(/(?<![가-힣A-Za-z0-9])([가-힣]{1,6})( +)\1(?![가-힣])/g)) {
+          add(ln, m.index, m.index + m[0].length, "typo", `'${m[1]}'이(가) 두 번 이어짐. 실수로 두 번 친 건지 확인 필요.`, m[1], { kind: "repeat", suspect: true });
+        }
+        for (const m of L.matchAll(/[가-힣][a-z]{1,2}(?=[가-힣])|(?<=[가-힣])[a-z]{1,2}[가-힣]/g)) {
+          add(ln, m.index, m.index + m[0].length, "typo", "한글 사이에 영문자가 끼어 있음. 한/영 전환 실수인지 확인 필요.", null, { kind: "hanen" });
+        }
+      }
+
+      // 문단 중간 줄바꿈
+      if (s.midBreak && !isLabel && indents.length && !indents.includes(0) && i + 1 < lines.length) {
+        const nx = lines[i + 1];
+        if (!isBlank(nx) && !/^[ \t　]/.test(nx) && !ENDERS.test(L.trimEnd()) && !(pageRe && pageRe.test(nx))
+          && /[가-힣A-Za-z0-9,]$/.test(L.trimEnd())) {
+          add(ln, L.trimEnd().length - 1, L.trimEnd().length, "rule",
+            "문장이 끝나지 않았는데 줄이 바뀜. 책의 줄 끝마다 엔터를 치지 말고 문단이 끝날 때만 침.",
+            null, { kind: "midbreak", joinNext: true });
+          skipIndent = true;
+        }
+      }
+    }
+
+    // 쪽 번호 흐름
+    for (let k = 1; k < pages.length; k++) {
+      const a = pages[k - 1], b = pages[k];
+      if (b.n === a.n) add(b.ln, 0, lines[b.ln - 1].length, "rule", `쪽 번호 ${b.n}이 두 번 나옴(${a.ln}번째 줄에도 있음).`, null, { kind: "pageseq" });
+      else if (b.n < a.n) add(b.ln, 0, lines[b.ln - 1].length, "rule", `쪽 번호가 ${a.n}에서 ${b.n}로 거꾸로 감.`, null, { kind: "pageseq" });
+      else if (b.n > a.n + 1) {
+        const miss = b.n - a.n - 1;
+        add(b.ln, 0, lines[b.ln - 1].length, "rule",
+          miss === 1 ? `${a.n + 1}쪽이 빠졌음(${a.n}쪽 다음이 ${b.n}쪽). 빈 쪽이나 그림 쪽이 아닌지 확인 필요.`
+            : `${a.n + 1}–${b.n - 1}쪽(${miss}쪽)이 빠졌음. 빈 쪽이나 그림 쪽이 아닌지 확인 필요.`, null, { kind: "pageseq" });
+      }
+    }
+
+    // 서지사항 (지침 6-가: vvvv도서명 / vv저자: / vv역자: / vv출판사: / vv출판일: / vv입력봉사자:)
+    if (s.bookInfo && lines.some((l) => l.trim())) {
+      const headIdx = [];
+      for (let i = 0; i < lines.length && headIdx.length < 12; i++) if (lines[i].trim()) headIdx.push(i);
+      const head = headIdx.map((i) => lines[i]);
+      const need = [["저자", /^\s*(저자|지은이)\s*:/], ["출판사", /^\s*출판사\s*:/], ["출판일", /^\s*출판일\s*:/], ["입력봉사자", /^\s*입력\s?봉사자\s*:/]];
+      const missing = need.filter(([, re]) => !head.some((l) => re.test(l))).map(([n]) => n);
+      if (missing.length) add(headIdx[0] + 1, 0, 0, "info", `맨 앞 서지사항에 ${missing.map((m) => "'" + m + ":'").join(", ")} 줄이 안 보임. 도서명(4칸) 다음 줄부터 2칸 들여 저자:, 역자:, 출판사:, 출판일:, 입력봉사자:를 적음.`, null, { kind: "bookinfo" });
+      const first = lines[headIdx[0]];
+      if (!/^ {4}\S/.test(first) && !/:/.test(first)) add(headIdx[0] + 1, 0, 0, "info", "첫 줄의 도서명은 4칸 들여씀.", null, { kind: "bookinfo" });
+      for (const i of headIdx) {
+        const L = lines[i];
+        if (/^\s*(저자|역자|출판사|출판일|입력\s?봉사자)\s*:/.test(L) && !/^ {2}\S/.test(L)) add(i + 1, 0, 0, "info", "서지사항 항목은 2칸 들여씀(vv저자: 박재완).", null, { kind: "bookinfo" });
+      }
+    }
+
+    if (s.structure) {
+      // 각주: '각주1:' 설명 문단 뒤에는 '각주 끝'
+      for (let i = 0; i < lines.length; i++) {
+        if (!/^\s*각주\s?\d*\s?[:：]/.test(lines[i])) continue;
+        let ok = false;
+        for (let j = i; j < Math.min(lines.length, i + 15); j++) {
+          if (j > i && !lines[j].trim()) break;
+          if (/각주\s?끝/.test(lines[j])) { ok = true; break; }
+        }
+        if (!ok) add(i + 1, 0, lines[i].length, "rule", "각주 설명이 끝나는 곳에 '각주 끝.'을 적음.", null, { kind: "footnote" });
+        while (i + 1 < lines.length && /^\s*각주\s?\d*\s?[:：]/.test(lines[i + 1])) i++;
+      }
+      // 표: '표 - 13 ...' 다음에는 '표 끝'
+      const tableIdx = [];
+      for (let i = 0; i < lines.length; i++) if (/^\s*표 ?[-–—]? ?\d+/.test(lines[i])) tableIdx.push(i);
+      for (let t = 0; t < tableIdx.length; t++) {
+        const st = tableIdx[t], en = t + 1 < tableIdx.length ? tableIdx[t + 1] : Math.min(lines.length, st + 200);
+        let ok = false;
+        for (let j = st; j < en; j++) if (/표\s?끝/.test(lines[j])) { ok = true; break; }
+        if (!ok) add(st + 1, 0, lines[st].length, "rule", "풀어 쓴 표의 마지막에 '표 끝.'을 적음.", null, { kind: "tableend" });
+      }
+      // 차례: 쪽수 필수
+      const tocAt = lines.findIndex((l, i) => i < 400 && /^\s*(차례|목차)\s*$/.test(l));
+      if (tocAt >= 0) {
+        let blankRun2 = 0;
+        for (let j = tocAt + 1; j < lines.length && j < tocAt + 300; j++) {
+          const L = lines[j];
+          if (!L.trim()) { if (++blankRun2 >= 2) break; continue; }
+          blankRun2 = 0;
+          if (/^ {4}\S/.test(L) && j > tocAt + 1) break; // 본문 제목(4칸)이 나오면 차례 끝으로 봄
+          if (!/\d{1,4}(쪽)?\s*$/.test(L)) add(j + 1, 0, L.length, "rule", "차례에는 쪽수를 꼭 적음(vv제4부 절 속의 문화읽기vv34).", null, { kind: "toc" });
+          else if (!/\S {2}\d{1,4}(쪽)?\s*$/.test(L)) add(j + 1, 0, L.length, "rule", "차례의 쪽수 앞은 2칸 띄움(vv해설vv40).", null, { kind: "toc" });
+        }
+      }
+      // 판권사항
+      if (lines.length > 150 && !lines.some((l) => /^\s*판권\s?사항\s*$/.test(l))) {
+        add(lines.length, 0, 0, "info", "판권사항이 안 보임. 책 맨 끝에 'vvvv판권사항'을 쓰고 도서명, 초판일, 저자, 출판사, 주소, ISBN, 가격을 적음.", null, { kind: "colophon" });
+      }
+    }
+
+    issues.sort((a, b) => a.line - b.line || a.start - b.start);
+    return { lines, issues, pages };
+  }
+
+  // 자동 수정: fix가 있는 이슈(겹치지 않는 것만) + 빈 줄 삭제 + 줄 합치기는 선택적
+  function applyFixes(lines, issues, opts) {
+    opts = opts || {};
+    const byLine = new Map();
+    for (const it of issues) {
+      if (!byLine.has(it.line)) byLine.set(it.line, []);
+      byLine.get(it.line).push(it);
+    }
+    const out = lines.slice();
+    const delLines = new Set();
+    let applied = 0;
+    for (const [ln, list] of byLine) {
+      let L = out[ln - 1];
+      list.sort((a, b) => b.start - a.start || b.end - a.end);
+      let lastStart = Infinity;
+      for (const it of list) {
+        if (it.delLine) { delLines.add(ln); applied++; continue; }
+        if (it.insertAt0 != null) { if (lastStart > 0) { L = it.insertAt0 + L; applied++; lastStart = 0; } continue; }
+        if (it.fix == null) continue;
+        if (it.end > lastStart) continue;
+        L = L.slice(0, it.start) + it.fix + L.slice(it.end);
+        lastStart = it.start; applied++;
+      }
+      out[ln - 1] = L;
+    }
+    const res = [];
+    for (let i = 0; i < out.length; i++) if (!delLines.has(i + 1)) res.push(out[i]);
+    return { text: res.join("\n"), applied };
+  }
+
+  // 한 이슈만 고치기 (줄 합치기 포함)
+  function fixOne(lines, it, choice) {
+    const out = lines.slice();
+    const i = it.line - 1;
+    if (choice != null) {
+      const a = it.fixStart ?? it.start, b = it.fixEnd ?? it.end;
+      out[i] = out[i].slice(0, a) + choice + out[i].slice(b);
+    } else if (it.joinNext) {
+      out[i] = out[i].replace(/\s+$/, "") + " " + out[i + 1].replace(/^\s+/, "");
+      out.splice(i + 1, 1);
+    } else if (it.delLine) out.splice(i, 1);
+    else if (it.insertAt0 != null) out[i] = it.insertAt0 + out[i];
+    else if (it.fix != null) out[i] = out[i].slice(0, it.start) + it.fix + out[i].slice(it.end);
+    return out.join("\n");
+  }
+
+  function isFixable(it) { return it.fix != null || it.delLine || it.insertAt0 != null || it.joinNext || !!(it.choices && it.choices.length); }
+
+  const api = { check, applyFixes, fixOne, isFixable, DEFAULTS, CAT, splitLines };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.WordCheck = api;
+})(typeof window !== "undefined" ? window : globalThis);
+
+</script>
+<script>
+(function () {
+  "use strict";
+  // 깃허브에 올릴 때 Cloudflare Worker 주소를 여기에 적음. 비우면 '내 바른 키'가 있을 때만 바른 검사를 함.
+  const BAREUN_PROXY = "";
+  const BAREUN_DIRECT = "https://api.bareun.ai/bareun.RevisionService/CorrectError";
+
+  const $ = (id) => document.getElementById(id);
+  const C = window.WordCheck;
+  const BLUE = new Set(["spell", "space", "typo"]);
+  const LABEL = { rule: "입력 규칙", info: "확인", spell: "맞춤법", space: "띄어쓰기", typo: "오타 의심" };
+  const RT = {"rule": "입력 규칙", "info": "확인", "spell": "맞춤법", "space": "띄어쓰기", "typo": "오타 의심", "fmt": "서식"};
+
+  const EXAMPLE = [
+    "    산사로 가는 길",
+    "  저자: 박재완",
+    "  출판사:연암서가",
+    "  출판일: 2023. 3. 2.",
+    "  입력봉사자: 홍길동",
+    "",
+    "    차례",
+    "  책머리에  1",
+    "  제4부 절 속의 문화읽기  34",
+    "  안동영산암 36",
+    "",
+    "    제4부 절 속의 문화읽기",
+    "",
+    "    안동영산암",
+    "  밤새 숲에 묶였던 안개가 아침 햇살에 풀려간다.  산새 한 마리가 울어 시간을 깨우고……",
+    "그는 조용히 길을 떠났다.",
+    "  「열하일기」를 읽은 날은 몇일이었을까. 초·중·고등학교 시절 이야기를 하며 30:11 ~ 30:13 구절을 외웠다 .",
+    "\t※ 1+2=3 처럼 쉬운 셈도 그때는 어려웠다. ",
+    "  \"그러면 내가 할께요.\" 나는 할수있다고 생각했다. 그것은 그 그 사람의 바램이었다.",
+    "  인간의 행동은 발달(1) 한다.",
+    "  각주1: 발달 - 인간의 신체적 요인이 상호작용하여 일어나는 변화 과정을 의미합니다.",
+    "",
+    "  표-13 “청소년 야간 공부방” 시범운영 현황",
+    "  1. 부산",
+    "  1) 운영단체: 기독교 봉사관",
+    "",
+    "",
+    "",
+    "",
+    "  오늘은 정말 ㅎ좋은 날이었다(정말로.",
+    "  東西南北 → 어디로든 갈 수 있었다. ①첫째, ②둘째."
+  ].join("\n");
+
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  };
+  function toast(msg) {
+    const t = $("toast"); t.textContent = msg; t.classList.add("on");
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("on"), 2400);
+  }
+
+  // ---------- 설정 ----------
+  let settings = Object.assign({}, C.DEFAULTS);
+  try { Object.assign(settings, JSON.parse(store.get("wc-settings-2026") || "{}")); } catch (e) {}
+  const boolKeys = ["midBreak", "hanja", "picRef", "bookInfo", "titleMarker", "spell", "spacing", "typo", "math", "structure"];
+  function loadSettingsUI() {
+    $("s-indents").value = settings.indents;
+    $("s-allowed").value = settings.allowed;
+    $("s-blank").value = String(settings.blankMax);
+    $("s-page").value = settings.pageFormat;
+    $("s-pagecustom").value = settings.pageCustom || "";
+    $("s-pagecustom").hidden = settings.pageFormat !== "custom";
+    for (const k of boolKeys) $("s-" + k).checked = !!settings[k];
+    $("s-bareunKey").value = store.get("wc-bareun-key") || "";
+  }
+  function readSettingsUI() {
+    settings.indents = $("s-indents").value;
+    settings.allowed = $("s-allowed").value;
+    settings.blankMax = Number($("s-blank").value);
+    settings.pageFormat = $("s-page").value;
+    settings.pageCustom = $("s-pagecustom").value;
+    $("s-pagecustom").hidden = settings.pageFormat !== "custom";
+    for (const k of boolKeys) settings[k] = $("s-" + k).checked;
+    store.set("wc-settings-2026", JSON.stringify(settings));
+    store.set("wc-bareun-key", $("s-bareunKey").value.trim());
+  }
+  loadSettingsUI();
+  $("settings").addEventListener("change", () => { readSettingsUI(); updateButtons(); if (mode === "review") run(); });
+  $("settings").addEventListener("input", (e) => { if (e.target.type === "text") { readSettingsUI(); if (mode === "review") debounceRun(); } });
+  $("reset").onclick = () => { settings = Object.assign({}, C.DEFAULTS); store.set("wc-settings-2026", JSON.stringify(settings)); loadSettingsUI(); if (mode === "review") run(); };
+  $("toggleSettings").onclick = () => {
+    const s = $("settings"); s.hidden = !s.hidden;
+    $("toggleSettings").setAttribute("aria-expanded", String(!s.hidden));
+    if (!s.hidden) s.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // ---------- 상태 ----------
+  let mode = "edit";
+  let result = { lines: [], issues: [], pages: [] };
+  let ignored = new Set();
+  let extFindings = [];   // 바른·Claude가 찾은 것 {line, col, lineText, wrong, right, type, reason, src}
+  const history = [];
+  let segIssues = [];     // 밑줄 조각별 이슈 목록
+
+  const keyOf = (it) => it.line + ":" + it.start + ":" + it.end + ":" + it.msg + ":" + (result.lines[it.line - 1] || "");
+
+  function setMode(m) {
+    mode = m;
+    $("edit").hidden = m !== "edit";
+    $("review").hidden = m !== "review";
+    hidePop(true);
+    if (m === "edit") $("src").focus();
+  }
+
+  // ---------- 파일 ----------
+  async function inflateRaw(u8) {
+    if (window.pako) return window.pako.inflateRaw(u8);
+    const ds = new DecompressionStream("deflate-raw");
+    const reader = new Blob([u8]).stream().pipeThrough(ds).getReader();
+    const parts = []; let n = 0;
+    try { for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); n += value.length; } } catch (e) { if (!n) throw e; }
+    const out = new Uint8Array(n); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; }
+    return out;
+  }
+  let fmtItems = [], fmtText = null;
+  async function openFile(f) {
+    const name = f.name || "";
+    const ext = ((name.match(/\.([^.]+)$/) || [])[1] || "").toLowerCase();
+    $("fileinfo").textContent = "읽는 중임.";
+    try {
+      const buf = new Uint8Array(await f.arrayBuffer());
+      let text, info = null;
+      if (ext === "hwp") ({ text, info } = await HwpRead.hwpAnalyze(buf, inflateRaw));
+      else if (ext === "hwpx") ({ text, info } = await HwpRead.hwpxAnalyze(buf, inflateRaw));
+      else {
+        text = new TextDecoder("utf-8").decode(buf);
+        if (text.includes(String.fromCharCode(0xFFFD))) { try { text = new TextDecoder("euc-kr").decode(buf); } catch (e) {} }
+      }
+      text = text.replace(/\r\n?/g, "\n");
+      pushHistory();
+      $("src").value = text;
+      extFindings = []; ignored.clear();
+      fmtItems = [];
+      if (!/\((~|∼)?\d+\)\.hwpx?$/i.test(name)) fmtItems.push({ msg: `파일 이름은 '책제목(쪽수).hwp'로 저장함(예: 토지(~150).hwp).`, lines: [] });
+      if (ext === "hwpx") fmtItems.push({ msg: "지침은 한글 파일(hwp)임. 다른 이름으로 저장에서 형식을 '한글 문서(*.hwp)'로 고름.", lines: [] });
+      if (info) fmtItems.push(...HwpRead.formatIssues(info));
+      fmtText = text;
+      $("fileinfo").textContent = `${name}, ${text.split("\n").length.toLocaleString()}줄`;
+      run();
+    } catch (e) {
+      $("fileinfo").textContent = "파일을 읽지 못했음. " + (e.message || e) + " 한글에서 전체 선택해 붙여 넣어도 됨.";
+    }
+  }
+  $("file").onchange = () => { if ($("file").files[0]) openFile($("file").files[0]); $("file").value = ""; };
+  document.addEventListener("dragover", (e) => { e.preventDefault(); document.body.classList.add("drag"); });
+  document.addEventListener("dragleave", (e) => { if (e.target === document.documentElement || !e.relatedTarget) document.body.classList.remove("drag"); });
+  document.addEventListener("drop", (e) => { e.preventDefault(); document.body.classList.remove("drag"); const f = e.dataTransfer?.files?.[0]; if (f) openFile(f); });
+
+  // ---------- 검사 ----------
+  let runTimer = null;
+  function debounceRun() { clearTimeout(runTimer); runTimer = setTimeout(run, 300); }
+
+  function relocateExt(lines) {
+    const out = [];
+    for (const f of extFindings) {
+      let li = -1;
+      if (lines[f.line - 1] === f.lineText) li = f.line - 1;
+      else {
+        const lo = Math.max(0, f.line - 80), hi = Math.min(lines.length, f.line + 80);
+        for (let i = lo; i < hi; i++) if (lines[i] === f.lineText) { li = i; break; }
+      }
+      if (li < 0) continue;
+      const L = lines[li];
+      let at = L.slice(f.col, f.col + f.wrong.length) === f.wrong ? f.col : L.indexOf(f.wrong);
+      if (at < 0) continue;
+      f.line = li + 1; f.lineText = L; f.col = at;
+      const cat = f.type === "띄어쓰기" ? "space" : f.type === "오타" ? "typo" : "spell";
+      out.push({ line: li + 1, start: at, end: at + f.wrong.length, cat, msg: f.reason || "고칠 곳으로 보임.", fix: f.right, ext: f.src, suspect: true });
+    }
+    return out;
+  }
+
+  function run() {
+    const text = $("src").value;
+    store.set("wc-draft", text.length < 1.5e6 ? text : "");
+    if (!text.trim()) { toast("원고가 비어 있음."); setMode("edit"); return; }
+    result = C.check(text, settings);
+    const taken = new Set(result.issues.map((i) => i.line + ":" + i.start));
+    for (const a of relocateExt(result.lines)) if (!taken.has(a.line + ":" + a.start)) result.issues.push(a);
+    result.issues.sort((a, b) => a.line - b.line || a.start - b.start);
+    if (mode !== "review") setMode("review");
+    render();
+  }
+  $("run").onclick = run;
+  $("src").addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") run(); });
+  $("back").onclick = () => setMode("edit");
+  $("example").onclick = () => { pushHistory(); $("src").value = EXAMPLE; extFindings = []; ignored.clear(); fmtItems = []; $("fileinfo").textContent = "예시 원고"; run(); };
+  $("clear").onclick = () => { pushHistory(); $("src").value = ""; extFindings = []; ignored.clear(); fmtItems = []; $("fileinfo").textContent = ""; $("src").focus(); };
+
+  const visible = () => result.issues.filter((i) => !ignored.has(keyOf(i)) && !i.quiet);
+
+  // ---------- 그리기 ----------
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function ws(s, pos, lead, trail) {
+    let o = "";
+    for (let k = 0; k < s.length; k++) {
+      const ch = s[k], p = pos + k;
+      if (ch === " " || ch === " " || ch === "　") {
+        const special = p < lead || p >= trail || s[k - 1] === " " || s[k + 1] === " " || ch !== " ";
+        o += special ? '<span class="sp"> </span>' : " ";
+      } else if (ch === "\t") o += '<span class="tab">→\t</span>';
+      else o += esc(ch);
+    }
+    return o;
+  }
+  function renderLine(L, its) {
+    const lead = L.match(/^[ 　 ]*/)[0].length;
+    const trail = L.length - L.match(/[ 　 \t]*$/)[0].length;
+    const pts = new Set([0, L.length]);
+    const spans = [], zeros = new Map();
+    for (const it of its) {
+      const s = Math.min(it.start, L.length), e = Math.min(Math.max(it.end, it.start), L.length);
+      if (e > s) { spans.push({ s, e, it }); pts.add(s); pts.add(e); }
+      else { const at = Math.min(s, L.length); if (!zeros.has(at)) zeros.set(at, []); zeros.get(at).push(it); pts.add(at); }
+    }
+    const P = [...pts].sort((a, b) => a - b);
+    let o = "";
+    for (let k = 0; k < P.length; k++) {
+      const a = P[k], b = P[k + 1];
+      if (zeros.has(a)) o += mark(zeros.get(a), "", true);
+      if (b == null) break;
+      const cover = spans.filter((x) => x.s <= a && x.e >= b).map((x) => x.it);
+      const piece = ws(L.slice(a, b), a, lead, trail);
+      o += cover.length ? mark(cover, piece, false) : piece;
+    }
+    return o;
+  }
+  function mark(list, inner, zero) {
+    const idx = segIssues.push(list) - 1;
+    const blue = list.every((i) => BLUE.has(i.cat));
+    const info = list.every((i) => i.cat === "info");
+    return `<span class="m${blue ? " b" : ""}${info ? " i" : ""}${zero ? " z" : ""}" data-s="${idx}" tabindex="0">${inner}</span>`;
+  }
+
+  function render() {
+    hidePop(true);
+    segIssues = [];
+    const vis = visible();
+    let rule = 0, lang = 0, info = 0;
+    for (const it of vis) { if (it.cat === "rule") rule++; else if (it.cat === "info") info++; else lang++; }
+    const parts = [];
+    if (rule) parts.push(`<span class="o">${RT.rule} ${rule.toLocaleString()}곳</span>`);
+    if (lang) parts.push(`<span class="b">${RT.spell} ${lang.toLocaleString()}곳</span>`);
+    if (info) parts.push(`<span class="i">${RT.info} ${info.toLocaleString()}곳</span>`);
+    $("summary").innerHTML = parts.length
+      ? `${result.lines.length.toLocaleString()}줄에서 ${parts.join(", ")}을 찾았음. 밑줄에 마우스를 올리면 설명이 나옴.`
+      : `${result.lines.length.toLocaleString()}줄을 봤는데 고칠 곳이 없음.`;
+    // 서식
+    const g = $("global"); g.innerHTML = "";
+    for (const it of fmtItems) {
+      const d = document.createElement("div"); d.className = "g";
+      d.innerHTML = `<span class="gl">${RT.fmt}</span>` + esc(it.msg) + (it.lines.length ? ` <span class="muted">${it.lines.slice(0, 6).map((l) => `<button class="t dim" data-line="${l}">${l}</button>`).join(" ")}${it.lines.length > 6 ? ` 외 ${it.lines.length - 6}곳` : ""}번째 줄</span>` : "");
+      g.appendChild(d);
+    }
+    // 원고
+    const byLine = new Map();
+    for (const it of vis) { if (!byLine.has(it.line)) byLine.set(it.line, []); byLine.get(it.line).push(it); }
+    const rows = [];
+    for (let i = 0; i < result.lines.length; i++) {
+      const ln = i + 1;
+      rows.push(`<div class="ln" id="L${ln}"><span class="no">${ln}</span><span class="tx">${renderLine(result.lines[i], byLine.get(ln) || [])}</span></div>`);
+    }
+    $("doc").innerHTML = rows.join("");
+    const fixable = vis.filter((i) => i.cat === "rule" && C.isFixable(i) && !i.joinNext && !i.suspect && !i.choices).length;
+    $("fixAll").disabled = !fixable;
+    $("fixAll").textContent = fixable ? `규칙 위반 ${fixable.toLocaleString()}곳 한꺼번에 고치기` : "한꺼번에 고칠 규칙 위반 없음";
+    updateButtons();
+  }
+  $("global").addEventListener("click", (e) => {
+    const l = e.target.dataset.line; if (!l) return;
+    if ($("src").value !== fmtText) toast("파일을 연 뒤 원고가 바뀌어서 줄 위치가 다를 수 있음.");
+    jump(+l);
+  });
+  function jump(ln) {
+    const row = $("L" + ln); if (!row) return;
+    row.scrollIntoView({ block: "center" });
+    document.querySelectorAll(".ln.flash").forEach((x) => x.classList.remove("flash"));
+    row.classList.add("flash");
+  }
+
+  // ---------- 설명 창 ----------
+  const pop = $("pop");
+  let popFor = null, pinned = false, hideTimer = null;
+  function showPop(el, pin) {
+    clearTimeout(hideTimer);
+    const list = segIssues[+el.dataset.s] || [];
+    if (!list.length) return;
+    if (popFor && popFor !== el) popFor.classList.remove("on");
+    popFor = el; el.classList.add("on");
+    if (pin) pinned = true;
+    const blue = list.every((i) => BLUE.has(i.cat));
+    pop.className = blue ? "b" : "";
+    const show = (s) => s.replace(/ /g, "·").replace(/\t/g, "→");
+    pop.innerHTML = list.map((it, k) => {
+      const L = result.lines[it.line - 1] || "";
+      const piece = L.slice(it.start, it.end);
+      let chg = "";
+      if (it.joinNext) chg = "다음 줄을 이 줄 뒤에 붙임.";
+      else if (it.delLine) chg = "이 빈 줄을 지움.";
+      else if (it.insertAt0) chg = `앞에 <code>${esc(show(it.insertAt0))}</code>를 넣음.`;
+      else if (it.fix != null && piece) chg = `<code>${esc(show(piece))}</code> → <code>${it.fix === "" ? "(지움)" : esc(show(it.fix))}</code>`;
+      const lab = (it.ext ? esc(`${it.ext === "바른" ? "바른이" : it.ext + "가"} 찾은 `) : "") + RT[it.cat];
+      return `<div class="it" data-k="${k}"><div class="lab${BLUE.has(it.cat) ? " b" : ""}">${lab}</div><div class="msg">${esc(it.msg)}</div>${chg ? `<div class="chg">${chg}</div>` : ""}<div class="row sepd">${it.choices && it.choices.length ? it.choices.map((c, ci) => `<button class="t strong" data-act="choice" data-c="${ci}">${esc(c.label)}</button>`).join("") : (C.isFixable(it) ? '<button class="t strong" data-act="fix">고치기</button>' : "")}<button class="t dim" data-act="ign">무시</button></div></div>`;
+    }).join("");
+    pop.hidden = false;
+    const r = el.getBoundingClientRect();
+    const w = pop.offsetWidth;
+    let left = r.left + window.scrollX;
+    left = Math.max(16 + window.scrollX, Math.min(left, window.scrollX + document.documentElement.clientWidth - w - 16));
+    let top = r.bottom + window.scrollY + 8;
+    if (r.bottom + pop.offsetHeight + 16 > window.innerHeight && r.top > pop.offsetHeight + 16) top = r.top + window.scrollY - pop.offsetHeight - 8;
+    pop.style.left = left + "px"; pop.style.top = top + "px";
+  }
+  function hidePop(force) {
+    if (pinned && !force) return;
+    pinned = false; pop.hidden = true;
+    if (popFor) popFor.classList.remove("on");
+    popFor = null;
+  }
+  const doc = $("doc");
+  doc.addEventListener("mouseover", (e) => { const m = e.target.closest(".m"); if (m && !pinned) showPop(m, false); });
+  doc.addEventListener("mouseout", (e) => { const m = e.target.closest(".m"); if (m && !pinned) { clearTimeout(hideTimer); hideTimer = setTimeout(() => hidePop(false), 300); } });
+  doc.addEventListener("click", (e) => { const m = e.target.closest(".m"); if (m) { pinned = false; showPop(m, true); e.stopPropagation(); } });
+  doc.addEventListener("keydown", (e) => { const m = e.target.closest(".m"); if (m && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pinned = false; showPop(m, true); pop.querySelector("button")?.focus(); } });
+  pop.addEventListener("mouseenter", () => clearTimeout(hideTimer));
+  pop.addEventListener("mouseleave", () => { if (!pinned) hideTimer = setTimeout(() => hidePop(false), 300); });
+  document.addEventListener("click", (e) => { if (!pop.hidden && !pop.contains(e.target) && !e.target.closest(".m")) hidePop(true); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !pop.hidden) { const f = popFor; hidePop(true); f?.focus(); } });
+  pop.addEventListener("click", (e) => {
+    const act = e.target.dataset.act; if (!act || !popFor) return;
+    const list = segIssues[+popFor.dataset.s] || [];
+    const it = list[+e.target.closest(".it").dataset.k];
+    if (!it) return;
+    const y = window.scrollY;
+    if (act === "fix" || act === "choice") {
+      pushHistory();
+      $("src").value = act === "choice" ? C.fixOne(result.lines, it, it.choices[+e.target.dataset.c].fix) : C.fixOne(result.lines, it);
+      if (it.ext) extFindings = extFindings.filter((f) => !(f.line === it.line && f.col === it.start));
+      run(); toast("고쳤음.");
+    } else { ignored.add(keyOf(it)); render(); }
+    window.scrollTo(0, y);
+  });
+
+  // ---------- 고치기, 내보내기 ----------
+  function pushHistory() { history.push($("src").value); if (history.length > 30) history.shift(); $("undo").disabled = false; }
+  $("undo").onclick = () => { if (!history.length) return; $("src").value = history.pop(); $("undo").disabled = !history.length; run(); toast("되돌렸음."); };
+  $("fixAll").onclick = () => {
+    const targets = result.issues.filter((i) => i.cat === "rule" && C.isFixable(i) && !i.joinNext && !i.suspect && !i.choices && !ignored.has(keyOf(i)));
+    if (!targets.length) return;
+    pushHistory();
+    const r = C.applyFixes(result.lines, targets);
+    $("src").value = r.text;
+    run();
+    const left = visible().filter((i) => i.choices).length;
+    toast(`${r.applied.toLocaleString()}곳을 고쳤음.` + (left ? ` 들여쓰기 ${left.toLocaleString()}곳은 2칸, 4칸 중 하나씩 골라야 함.` : ""));
+  };
+  $("copyOut").onclick = async () => {
+    try { await navigator.clipboard.writeText($("src").value); toast("복사했음. 한글 문서에 붙여 넣으면 됨."); }
+    catch (e) { setMode("edit"); $("src").select(); toast("자동 복사가 막혔음. Ctrl+C로 복사함."); }
+  };
+  let downloads = null;
+  async function saveFile(filename, text, type) {
+    const blob = new Blob(["﻿" + text], { type: (type || "text/plain") + ";charset=utf-8" });
+    if (downloads) { try { await downloads.save({ filename, data: blob }); } catch (e) { toast("저장하지 않았음."); } return; }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  function csvField(s) { s = String(s ?? ""); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  $("saveTxt").onclick = () => saveFile("입력원고_검수본.txt", $("src").value);
+  $("saveCsv").onclick = () => {
+    const rows = [["줄", "분류", "해당 부분", "제안", "설명"]];
+    for (const it of fmtItems) rows.push([it.lines.join(" "), "서식", "", "", it.msg]);
+    for (const it of visible()) {
+      const L = result.lines[it.line - 1] || "";
+      rows.push([it.line, LABEL[it.cat] + (it.ext ? `(${it.ext})` : ""), L.slice(it.start, it.end), it.fix == null ? "" : (it.fix === "" ? "(지움)" : it.fix), it.msg]);
+    }
+    saveFile("검수결과표.csv", rows.map((r) => r.map(csvField).join(",")).join("\r\n"), "text/csv");
+  };
+
+  // ---------- 바깥 맞춤법 검사 공통 ----------
+  let extCtl = null;
+  function chunks() {
+    const out = []; let cur = [], size = 0;
+    for (let i = 0; i < result.lines.length; i++) {
+      const L = result.lines[i];
+      if (!L.trim()) continue;
+      if (size + L.length > 3000 && cur.length) { out.push(cur); cur = []; size = 0; }
+      cur.push({ ln: i + 1, text: L }); size += L.length + 1;
+    }
+    if (cur.length) out.push(cur);
+    return out;
+  }
+  function addFinding(f) {
+    if (!f.wrong || f.wrong === f.right) return false;
+    if (extFindings.some((x) => x.line === f.line && x.col === f.col && x.wrong === f.wrong)) return false;
+    extFindings.push(f); return true;
+  }
+  function progress(html) { $("progress").innerHTML = html; }
+  async function runExternal(name, perChunk) {
+    if (extCtl) return;
+    const parts = chunks();
+    if (!parts.length) return;
+    extCtl = new AbortController();
+    const words = result.lines.join(" ").split(/\s+/).filter(Boolean).length;
+    let found = 0, done = 0;
+    updateButtons();
+    try {
+      for (const part of parts) {
+        if (extCtl.signal.aborted) break;
+        progress(`${esc(name)} 검사 중임. ${done + 1} / ${parts.length}묶음 (${part[0].ln}–${part[part.length - 1].ln}번째 줄) <button class="t" id="extStop">멈추기</button>`);
+        $("extStop").onclick = () => extCtl?.abort();
+        found += await perChunk(part, extCtl.signal);
+        done++;
+        run();
+      }
+      progress(extCtl.signal.aborted ? `${esc(name)} 검사를 멈췄음. ${found}곳을 찾았음.` : `${esc(name)} 검사를 마쳤음. ${found}곳을 더 찾았음.` + (name === "바른" ? ` 약 ${words.toLocaleString()}어절을 썼음.` : ""));
+    } catch (e) {
+      const at = parts[done]?.[0]?.ln;
+      progress(esc(e.userMsg || (e.code === "cancelled" ? "멈췄음." : `중간에 멈췄음. ${at ? at + "번째 줄부터 " : ""}다시 하면 됨.`)) + (found ? ` 그 전까지 ${found}곳을 찾았음.` : ""));
+    } finally { extCtl = null; updateButtons(); run(); }
+  }
+
+  // ---------- 바른 ----------
+  function bareunTarget() {
+    const key = (store.get("wc-bareun-key") || "").trim();
+    if (key) return { url: BAREUN_DIRECT, key };
+    if (BAREUN_PROXY && !BAREUN_PROXY.startsWith("/*")) return { url: BAREUN_PROXY, key: null };
+    return null;
+  }
+  const BAREUN_CAT = { SPACING: "띄어쓰기", TYPO: "오타" };
+  async function bareunChunk(part, signal) {
+    const tgt = bareunTarget();
+    const content = part.map((p) => p.text).join("\n");
+    const starts = []; let o = 0; for (const p of part) { starts.push(o); o += p.text.length + 1; }
+    const body = tgt.key
+      ? { document: { content, language: "ko-KR" }, encoding_type: "UTF16" }
+      : { text: content };
+    const headers = { "Content-Type": "application/json" };
+    if (tgt.key) headers["api-key"] = tgt.key;
+    let res;
+    try { res = await fetch(tgt.url, { method: "POST", headers, body: JSON.stringify(body), signal }); }
+    catch (e) { if (signal.aborted) throw { code: "cancelled" }; throw { userMsg: "바른 서버에 연결하지 못했음. 인터넷 연결이나 프록시 주소를 확인 필요." }; }
+    if (!res.ok) {
+      let detail = ""; try { detail = (await res.text()).slice(0, 200); } catch (e) {}
+      const msg = res.status === 401 || res.status === 403 ? (tgt.key ? "바른 키가 맞지 않음. 설정에서 키를 확인 필요." : "이 주소에서는 공용 바른 검사를 쓸 수 없음.")
+        : res.status === 429 || /quota|limit|한도/i.test(detail) ? "바른 사용 한도에 걸렸음. 잠시 뒤에 하거나, 설정에 내 바른 키를 넣음."
+        : res.status === 413 ? "한 번에 보내는 글이 너무 김." : `바른 검사가 실패했음(${res.status}).`;
+      throw { userMsg: msg };
+    }
+    const data = await res.json();
+    const blocks = data.revised_blocks || data.revisedBlocks || [];
+    const helps = data.helps || {};
+    let n = 0;
+    for (const b of blocks) {
+      const og = b.origin || {};
+      let off = Number(og.begin_offset ?? og.beginOffset ?? -1), len = Number(og.length ?? 0);
+      let wrong = og.content ?? "";
+      if (!wrong && off >= 0) wrong = content.substr(off, len);
+      if (off < 0 || content.substr(off, wrong.length) !== wrong) off = content.indexOf(wrong);
+      if (off < 0 || !wrong) continue;
+      const rv = (b.revisions && b.revisions[0]) || {};
+      const right = rv.revised ?? b.revised ?? "";
+      if (!right || right === wrong) continue;
+      if (wrong.includes("\n") || right.includes("\n")) continue;
+      // 지침과 부딪히는 공백 교정(문장부호 주변, 들여쓰기)은 건너뜀
+      if (wrong.replace(/\s/g, "") === right.replace(/\s/g, "") && /[^\p{L}\p{N}\s]/u.test(wrong + right)) continue;
+      if (wrong.trim() === right.trim()) continue;
+      let li = 0; while (li + 1 < starts.length && starts[li + 1] <= off) li++;
+      const col = off - starts[li];
+      const help = helps[rv.help_id ?? rv.helpId] || {};
+      const cat = String(rv.category || "");
+      if (addFinding({ line: part[li].ln, col, lineText: part[li].text, wrong, right, type: BAREUN_CAT[cat] || "맞춤법", reason: help.comment || (cat === "SPACING" ? "띄어쓰기를 고칠 곳으로 보임." : "맞춤법을 고칠 곳으로 보임."), src: "바른" })) n++;
+    }
+    return n;
+  }
+  $("bareunRun").onclick = () => {
+    if (!bareunTarget()) { toast("설정에 바른 키를 넣거나 프록시 주소를 정해야 함."); return; }
+    runExternal("바른", bareunChunk);
+  };
+
+  // ---------- Claude (claude.ai에서 열었을 때만) ----------
+  let sample = null;
+  const PROMPT = `너는 한국어 교정 전문가야. 아래 원고는 시각장애인용 점자책을 만들려고 봉사자가 출판된 책을 보고 그대로 타이핑한 거야. 원본 책은 없어.
+타이핑하면서 생긴 것으로 보이는 맞춤법·띄어쓰기 실수와 오타만 찾아.
+- 작가가 일부러 쓴 표현(사투리, 구어체, 인물의 말투, 의성어·의태어, 옛말, 시적 표현, 고유명사, 외래어)은 건드리지 마.
+- 문장 다듬기, 어순, 문체는 고치지 마.
+- 문장부호, 따옴표 모양, 들여쓰기, 공백 개수, 특수문자, 한자는 무시해.
+- 확실한 것만 적어.
+- 각 줄 앞의 [숫자]는 줄 번호야.
+출력은 JSON 배열 하나만: [{"line": 줄 번호, "wrong": "원고에 적힌 그대로의 틀린 부분(앞뒤 한두 글자 포함)", "right": "고친 형태", "type": "맞춤법"|"띄어쓰기"|"오타", "reason": "짧은 이유, 음체(~음, ~함으로 끝맺음)"}]. 없으면 [].
+
+원고:
+`;
+  async function claudeChunk(part, signal) {
+    let data;
+    try { data = await sample.json(PROMPT + part.map((p) => `[${p.ln}] ${p.text}`).join("\n"), { signal }); }
+    catch (e) {
+      if (e.code === "invalid_json") return 0;
+      if (e.code === "not_granted" || e.code === "sampling_disabled") { $("claudeRun").hidden = true; throw { userMsg: "Claude 사용이 허락되지 않았음." }; }
+      if (e.code === "rate_limited") throw { userMsg: "Claude 사용 한도에 걸렸음. 잠시 뒤에 다시 하면 됨." };
+      throw e;
+    }
+    let n = 0;
+    const valid = new Map(part.map((p) => [p.ln, p.text]));
+    if (Array.isArray(data)) for (const d of data) {
+      const ln = Number(d?.line), wrong = String(d?.wrong ?? ""), L = valid.get(ln);
+      if (!L || !wrong) continue;
+      const col = L.indexOf(wrong); if (col < 0) continue;
+      if (addFinding({ line: ln, col, lineText: L, wrong, right: String(d.right ?? ""), type: String(d.type || "맞춤법"), reason: String(d.reason || ""), src: "Claude" })) n++;
+    }
+    return n;
+  }
+  $("claudeRun").onclick = () => { if (sample) runExternal("Claude", claudeChunk); };
+
+  function updateButtons() {
+    $("bareunRun").hidden = !bareunTarget();
+    $("claudeRun").hidden = !sample;
+    $("bareunRun").disabled = $("claudeRun").disabled = !!extCtl;
+    const viaKey = !!(store.get("wc-bareun-key") || "").trim();
+    $("bareunRun").textContent = viaKey ? "바른 맞춤법 검사 (내 키)" : "바른 맞춤법 검사";
+  }
+
+  // ---------- 시작 ----------
+  const draft = store.get("wc-draft");
+  if (draft && draft.trim()) $("src").value = draft;
+  updateButtons();
+  if (window.claude && claude.use) {
+    claude.use("sample").then((s) => { if (s) { sample = s; updateButtons(); } }).catch(() => {});
+    claude.use("downloads").then((d) => { if (d) downloads = d; }).catch(() => {});
+  }
+  if (!draft || !draft.trim()) { $("src").value = EXAMPLE; $("fileinfo").textContent = "예시 원고"; run(); }
+  else setMode("edit");
+})();
+</script>
+</body>
+</html>
